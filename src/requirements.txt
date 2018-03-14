@@ -1,0 +1,16 @@
+dill==0.2.7.1
+nltk==3.2.5
+numpy==1.14.0
+scipy==1.0.0
+spacy==2.0.9
+sklearn==0.0
+pyyaml==3.12.0
+
+# Add the local PYPI server
+--trusted-host dev-web.hutoma.com
+--extra-index-url http://dev-web.hutoma.com:8088
+
+# add dependencies
+hu_logging==0.3.20
+hu_utils==0.3.19
+hu_training==0.3.20
