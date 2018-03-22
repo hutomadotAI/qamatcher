@@ -55,8 +55,9 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
                 EmbeddingChatProcessWorker.__spacy_wrapper.tokenizeSpacy(s)
                 for s in list
             ]
+
             try:
-                vecs = await self.w2v_client.get_vectors_for_words(words)
+                vecs = await self.w2v_client.get_vectors_for_words(x_tokens_testset[0])
             except aiohttp.client_exceptions.ClientConnectorError as exc:
                 self.logger.warn(
                     "Could not receive response from w2v service - {}".format(
