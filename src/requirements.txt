@@ -11,6 +11,6 @@ pyyaml==3.12.0
 --extra-index-url http://dev-web.hutoma.com:8088
 
 # add dependencies
-hu_logging==0.3.20
-hu_utils==0.3.19
-hu_training==0.3.20
+hu_logging==0.3.24
+hu_utils==0.3.25
+hu_training==0.3.27

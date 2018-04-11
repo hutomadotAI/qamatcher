@@ -1,5 +1,5 @@
 # Base off of the Python image
-FROM python:3.5.2-slim
+FROM python:3.5.5-slim
 LABEL maintainer "Pedro Teixeira <pedrotei@hutoma.com>"
 
 RUN apt-get update \
