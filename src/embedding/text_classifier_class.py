@@ -116,7 +116,7 @@ class EmbeddingComparison(object):
             best_preds_per_class[:, i] = np.max(cossim[:, idx], 1)
         probs = best_preds_per_class[np.arange(len(best_preds_per_class)),
                                      np.argmax(best_preds_per_class, 1)]
-        self.scale_probas(probs)
+        probs = self.scale_probas(probs)
 
         return preds, probs
 
