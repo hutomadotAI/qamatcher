@@ -100,7 +100,7 @@ class EmbeddingComparison(object):
     def predict(self, X):
         target_tfidf = self.vectorizer.transform(X)
         target_tfidf = target_tfidf - self.pca.components_[0]
-        probs = {}
+
         # compute cosine similarity
         cossim = np.dot(target_tfidf, self.X_tfidf.T) / (
             np.outer(np.linalg.norm(target_tfidf, axis=1), np.linalg.norm(self.X_tfidf, axis=1)))
@@ -109,17 +109,16 @@ class EmbeddingComparison(object):
         preds = [self.y[i] for i in preds]
 
         # compute probas for classes
-        cosmin = np.min(cossim, 1)
-        tmp = cossim - cosmin.reshape([len(target_tfidf),1])
-        prob = tmp / np.sum(tmp, 1).reshape([len(target_tfidf),1])
-        prob_class = np.zeros((len(target_tfidf), len(self.classes)))
-        for i, cl in enumerate(self.classes):
-            idx = np.where(self.y == cl)[0]
-            prob_class[:,i] = np.sum(prob[:,idx], 1)
+        # take only best sample for each class and normalize those
+        best_preds_per_class = np.zeros((cossim.shape[0], len(self.classes)))
+        for i, c in enumerate(self.classes):
+            idx = np.where(self.y == c)[0]
+            best_preds_per_class[:, i] = np.max(cossim[:, idx], 1)
+        probs = best_preds_per_class[np.arange(len(best_preds_per_class)),
+                                     np.argmax(best_preds_per_class, 1)]
+        self.scale_probas(probs)
 
-        self.scale_probas(np.array(probs))
-
-        return preds, np.max(prob_class, 1).tolist()
+        return preds, probs
 
     def save_model(self, file_path):
         self.__logger.debug("Saving model to {}".format(file_path))
