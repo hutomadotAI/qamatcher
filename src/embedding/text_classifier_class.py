@@ -66,16 +66,22 @@ class EmbeddingComparison(object):
     def logger(self):
         return self.__logger
 
-    def __init__(self, w2v, embeddingDim = 300):
+    def __init__(self, w2v, embeddingDim = 300, random_seed=3435):
         self.__logger = _get_logger()
+        self.random_seed = random_seed
         self.w2v = w2v
         self.embeddingDim = embeddingDim
         self.vectorizer = TfidfEmbeddingVectorizer(
             self.w2v, self.embeddingDim)
-        self.pca = PCA(n_components=1)
+        self.pca = PCA(n_components=1, random_state=self.random_seed)
         self.X_tfidf = None
         self.y = None
         self.classes = None
+
+    def scale_probas(self, probas):
+        # positive part of tunable 'sigmoid' fct found at
+        # https://dinodini.wordpress.com/2010/04/05/normalized-tunable-sigmoid-functions/
+        return -4.5 * probas / (- probas - 3.5)
 
     def update_w2v(self, dic):
         self.w2v.update(dic)
@@ -110,12 +116,9 @@ class EmbeddingComparison(object):
         for i, cl in enumerate(self.classes):
             idx = np.where(self.y == cl)[0]
             prob_class[:,i] = np.sum(prob[:,idx], 1)
-        # sum of class vectors with largest prob is prediction
-        # preds = np.argmax(prob_class, 1)
-        # preds = [self.classes[i] for i in preds]
 
-        # res = [(pred, prob) for pred, prob in zip(preds[:10], prob_class[:10,:])]
-        # print(tabulate(res, headers=('pred','prob')))
+        self.scale_probas(np.array(probs))
+
         return preds, np.max(prob_class, 1).tolist()
 
     def save_model(self, file_path):
