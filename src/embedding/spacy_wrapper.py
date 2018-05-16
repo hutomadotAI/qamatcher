@@ -26,10 +26,7 @@ class SpacyWrapper(object):
 
     def tokenizeSpacy(self, sample):
         # get the tokens using spaCy
-        try:
-            tokens = SpacyWrapper.parser(sample, "utf-8")
-        except:
-            tokens = SpacyWrapper.parser(sample)
+        tokens = SpacyWrapper.parser(sample)
 
         # lemmatize
         lemmas = []
@@ -41,7 +38,9 @@ class SpacyWrapper(object):
         # tokens = [tok.orth_ for tok in tokens]
 
         # stoplist the tokens
-        tokens = [tok for tok in tokens if tok not in SpacyWrapper.STOPLIST]
+        tmp = [tok for tok in tokens if tok not in self.STOPLIST]
+        if len(tmp) > 0:
+            tokens = tmp
 
         # stoplist symbols
         tokens = [tok for tok in tokens if tok not in SpacyWrapper.SYMBOLS]
