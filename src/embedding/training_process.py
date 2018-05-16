@@ -57,9 +57,10 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
         spacy_wrapper = SpacyWrapper()
         self.logger.info("Tokenizing...")
         x_tokens = [spacy_wrapper.tokenizeSpacy(s) for s in x]
+        x_tokens_set = list(set([w for l in x_tokens for w in l]))
 
         words = {}
-        for l in x_tokens:
+        for l in x_tokens_set:
             for w in l:
                 words[w] = None
 
