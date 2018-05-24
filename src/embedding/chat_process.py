@@ -49,11 +49,11 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
 
         if self.is_ready:
             _ = msg.question.split(' ')
-            l = []
-            l.append(msg.question)
+            question_list = []
+            question_list.append(msg.question)
             x_tokens_testset = [
                 EmbeddingChatProcessWorker.__spacy_wrapper.tokenizeSpacy(s)
-                for s in l
+                for s in question_list
             ]
 
             unique_tokens = list(set([w for l in x_tokens_testset for w in l]))

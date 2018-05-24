@@ -134,6 +134,8 @@ class EmbeddingComparison(object):
         self.__logger.debug("Loading model from {}".format(file_path))
         with open(file_path, 'rb') as f:
             m = dill.load(f)
+        assert(len(m) == 5, "pkl file of saved model has wrong set of parameters;"\
+               "len is {} - should be 5".format(len(m)))
         self.vectorizer.word2weight = m[4]
         self.X_tfidf = m[0]
         self.y = m[1]
