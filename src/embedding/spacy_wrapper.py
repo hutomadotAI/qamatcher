@@ -38,7 +38,7 @@ class SpacyWrapper(object):
         # tokens = [tok.orth_ for tok in tokens]
 
         # stoplist the tokens
-        tmp = [tok for tok in tokens if tok not in self.STOPLIST]
+        tmp = [tok for tok in tokens if tok not in SpacyWrapper.STOPLIST]
         if len(tmp) > 0:
             tokens = tmp
 

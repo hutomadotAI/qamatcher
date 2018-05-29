@@ -81,7 +81,7 @@ class EmbeddingComparison(object):
     def scale_probas(self, probas):
         # positive part of tunable 'sigmoid' fct found at
         # https://dinodini.wordpress.com/2010/04/05/normalized-tunable-sigmoid-functions/
-        return -4.5 * probas / (- probas - 3.5)
+        return -10.5 * probas / (- probas - 9.5)
 
     def update_w2v(self, dic):
         self.w2v.update(dic)
@@ -100,7 +100,7 @@ class EmbeddingComparison(object):
         self.y = np.array(y)
         self.classes = list(set(y))
 
-    def predict(self, X):
+    def predict(self, X, scale_probas=False):
         target_tfidf = self.vectorizer.transform(X)
         target_tfidf = target_tfidf - self.pca.components_[0]
 
@@ -119,15 +119,18 @@ class EmbeddingComparison(object):
             best_preds_per_class[:, i] = np.max(cossim[:, idx], 1)
         probs = best_preds_per_class[np.arange(len(best_preds_per_class)),
                                      np.argmax(best_preds_per_class, 1)]
-        probs = self.scale_probas(probs)
+        if scale_probas:
+            probs = self.scale_probas(probs)
+        if len(self.X_tfidf) == 1:
+            probs = 1.0
 
-        return preds, probs
+        return preds, list(probs)
 
     def save_model(self, file_path):
         self.__logger.debug("Saving model to {}".format(file_path))
         with open(file_path, 'wb') as f:
             dill.dump([self.X_tfidf, self.y, self.pca, self.classes,
-                         self.vectorizer.word2weight, self.w2v], f)
+                       self.vectorizer.word2weight, self.w2v], f)
         return file_path
 
     def load_model(self, file_path):
