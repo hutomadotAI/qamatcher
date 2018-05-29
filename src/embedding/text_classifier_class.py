@@ -66,10 +66,10 @@ class EmbeddingComparison(object):
     def logger(self):
         return self.__logger
 
-    def __init__(self, w2v, embeddingDim = 300, random_seed=3435):
+    def __init__(self, w2v=None, embeddingDim = 300, random_seed=3435):
         self.__logger = _get_logger()
         self.random_seed = random_seed
-        self.w2v = w2v
+        self.w2v = w2v if w2v is not None else {}
         self.embeddingDim = embeddingDim
         self.vectorizer = TfidfEmbeddingVectorizer(
             self.w2v, self.embeddingDim)
@@ -86,6 +86,9 @@ class EmbeddingComparison(object):
     def update_w2v(self, dic):
         self.w2v.update(dic)
         self.vectorizer.update_w2v(dic)
+
+    def get_unknown_words(self, words):
+        return [w for w in words if w not in self.w2v.keys()]
 
     def fit(self, X, y):
         self.vectorizer.fit(X, y)
@@ -127,18 +130,21 @@ class EmbeddingComparison(object):
         self.__logger.debug("Saving model to {}".format(file_path))
         with open(file_path, 'wb') as f:
             dill.dump([self.X_tfidf, self.y, self.pca, self.classes,
-                       self.vectorizer.word2weight], f)
+                       self.vectorizer.word2weight, self.w2v], f)
         return file_path
 
     def load_model(self, file_path):
         self.__logger.debug("Loading model from {}".format(file_path))
         with open(file_path, 'rb') as f:
             m = dill.load(f)
+        assert(len(m) == 5, "pkl file of saved model has wrong set of parameters;"\
+               "len is {} - should be 5".format(len(m)))
         self.vectorizer.word2weight = m[4]
         self.X_tfidf = m[0]
         self.y = m[1]
         self.pca = m[2]
         self.classes = m[3]
+        self.update_w2v(m[5])
 
     def get_classes(self):
         return self.y

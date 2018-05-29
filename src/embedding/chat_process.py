@@ -48,24 +48,28 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
             self.setup_chat_session()
 
         if self.is_ready:
-            words = msg.question.split(' ')
-            list = []
-            list.append(msg.question)
+            _ = msg.question.split(' ')
+            question_list = []
+            question_list.append(msg.question)
             x_tokens_testset = [
                 EmbeddingChatProcessWorker.__spacy_wrapper.tokenizeSpacy(s)
-                for s in list
+                for s in question_list
             ]
 
+            unique_tokens = list(set([w for l in x_tokens_testset for w in l]))
+            cls = EmbeddingComparison()
+            cls.load_model(self.ai_path + "/" + MODEL_FILE)
+            unk_tokens = cls.get_unknown_words(unique_tokens)
+
             try:
-                vecs = await self.w2v_client.get_vectors_for_words(x_tokens_testset[0])
+                vecs = await self.w2v_client.get_vectors_for_words(unk_tokens)
             except aiohttp.client_exceptions.ClientConnectorError as exc:
                 self.logger.warn(
                     "Could not receive response from w2v service - {}".format(
                         exc))
                 return ait_c.ChatResponseMessage(msg, None, 0.0)
 
-            cls = EmbeddingComparison(w2v=vecs)
-            cls.load_model(self.ai_path + "/" + MODEL_FILE)
+            cls.update_w2v(vecs)
             yPred, yProbs = cls.predict(x_tokens_testset)
             resp = ait_c.ChatResponseMessage(msg, yPred[0], yProbs[0])
             return resp
