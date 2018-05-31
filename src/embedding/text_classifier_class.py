@@ -122,7 +122,7 @@ class EmbeddingComparison(object):
         if scale_probas:
             probs = self.scale_probas(probs)
         if len(self.X_tfidf) == 1:
-            probs = 1.0
+            probs = [1.0]
 
         return preds, list(probs)
 
