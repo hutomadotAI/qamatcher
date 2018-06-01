@@ -7,14 +7,13 @@ RUN apt-get update \
   build-essential \
  && rm -rf /var/lib/apt/lists/*
 
- RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir --upgrade pip
 # Copy common code
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
 # Run script to download models for languages we require
 RUN python -m spacy download en
-
 
 # Copy the code
 COPY embedding/ /src/embedding/
@@ -26,6 +25,8 @@ ARG USERID=1000
 ARG GROUPID=1000
 RUN addgroup --system --gid $GROUPID appuser
 RUN adduser --system --uid $USERID --gid $GROUPID appuser
+
+RUN mkdir /ai && chown appuser:appuser /ai
 
 USER appuser
 WORKDIR /home/appuser
