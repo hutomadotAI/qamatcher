@@ -61,8 +61,7 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
 
         words = {}
         for l in x_tokens_set:
-            for w in l:
-                words[w] = None
+            words[l] = None
 
         try:
             vecs = await self.get_vectors(list(words.keys()))
