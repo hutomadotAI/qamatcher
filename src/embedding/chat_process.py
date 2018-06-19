@@ -51,10 +51,12 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
             _ = msg.question.split(' ')
             question_list = []
             question_list.append(msg.question)
+            self.logger.info("q: {}".format(question_list))
             x_tokens_testset = [
                 EmbeddingChatProcessWorker.__spacy_wrapper.tokenizeSpacy(s)
                 for s in question_list
             ]
+            self.logger.info("tok: {}".format(x_tokens_testset))
 
             unique_tokens = list(set([w for l in x_tokens_testset for w in l]))
             cls = EmbeddingComparison()
@@ -71,7 +73,6 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
 
             cls.update_w2v(vecs)
             yPred, yProbs = cls.predict(x_tokens_testset)
-            # self.logger.info("yPred: {} yProbs: {}".format(type(yPred[0]), type(yProbs[0])))
             resp = ait_c.ChatResponseMessage(msg, yPred[0], yProbs[0].astype(str))
             return resp
 
