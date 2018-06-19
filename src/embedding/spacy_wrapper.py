@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import string
+import logging
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS
 import spacy
@@ -21,27 +22,35 @@ class SpacyWrapper(object):
     ]
 
     def __init__(self):
+        self.logger = logging.getLogger('spacy.tokenizer')
         if SpacyWrapper.parser is None:
             SpacyWrapper.parser = spacy.load('en')
 
     def tokenizeSpacy(self, sample):
         # get the tokens using spaCy
+        self.logger.info("**** sample: {}".format(sample))
         tokens = SpacyWrapper.parser(sample)
 
         # lemmatize
         lemmas = []
         for tok in tokens:
-            lemmas.append(tok.lemma_.lower().strip()
-                          if tok.lemma_ != "-PRON-" else tok.lower_)
+            # don't lemmatize or lower case if word is all caps
+            if tok.text.isupper():
+                lemmas.append(tok.text)
+            elif tok.lemma_ != "-PRON-":
+                lemmas.append(tok.lemma_.lower().strip())
+            else:
+                lemmas.append(tok.lower_)
+
         tokens = lemmas
+
+        # stoplist symbols
+        tokens = [tok for tok in tokens if tok not in SpacyWrapper.SYMBOLS]
 
         # stoplist the tokens
         tmp = [tok for tok in tokens if tok not in SpacyWrapper.STOPLIST]
         if len(tmp) > 0:
             tokens = tmp
-
-        # stoplist symbols
-        tokens = [tok for tok in tokens if tok not in SpacyWrapper.SYMBOLS]
 
         # remove large strings of whitespace
         while "" in tokens:
