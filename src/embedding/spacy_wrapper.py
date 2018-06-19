@@ -20,7 +20,7 @@ class SpacyWrapper(object):
                     if s not in ['why', 'when', 'where', 'why', 'how', 'which', 'what', 'whose', 'whom']])
     # List of symbols we don't care about
     SYMBOLS = " ".join(string.punctuation).split(" ") + [
-        u"-----", u"---", u"...", u"“", u"”", u"'ve"
+        u"-----", u"---", u"...", u"“", u"”", u'"', u"'ve"
     ]
 
     def __init__(self):
