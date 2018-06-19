@@ -83,6 +83,10 @@ class EmbeddingComparison(object):
         # https://dinodini.wordpress.com/2010/04/05/normalized-tunable-sigmoid-functions/
         return -10.5 * probas / (- probas - 9.5)
 
+    def downscale_probas(self, probas):
+        k = 0.2
+        return k * probas / (k - probas + 1.)
+
     def update_w2v(self, dic):
         self.w2v.update(dic)
         self.vectorizer.update_w2v(dic)
@@ -107,22 +111,12 @@ class EmbeddingComparison(object):
         # compute cosine similarity
         cossim = np.dot(target_tfidf, self.X_tfidf.T) / (
             np.outer(np.linalg.norm(target_tfidf, axis=1), np.linalg.norm(self.X_tfidf, axis=1)))
+
         # most similar vector is the predicted class
         preds = np.argmax(cossim, 1)
         preds = [self.y[i] for i in preds]
-
-        # compute probas for classes
-        # take only best sample for each class and normalize those
-        best_preds_per_class = np.zeros((cossim.shape[0], len(self.classes)))
-        for i, c in enumerate(self.classes):
-            idx = np.where(self.y == c)[0]
-            best_preds_per_class[:, i] = np.max(cossim[:, idx], 1)
-        probs = best_preds_per_class[np.arange(len(best_preds_per_class)),
-                                     np.argmax(best_preds_per_class, 1)]
-        if scale_probas:
-            probs = self.scale_probas(probs)
-        if len(self.X_tfidf) == 1:
-            probs = [1.0]
+        probs = self.downscale_probas(np.max(cossim, axis=1))
+        # self.__logger.info("probs: {} max dist: {}".format(probs, np.max(cossim, axis=1)))
 
         return preds, list(probs)
 

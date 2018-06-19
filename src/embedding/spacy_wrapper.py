@@ -35,8 +35,6 @@ class SpacyWrapper(object):
                           if tok.lemma_ != "-PRON-" else tok.lower_)
         tokens = lemmas
 
-        # tokens = [tok.orth_ for tok in tokens]
-
         # stoplist the tokens
         tmp = [tok for tok in tokens if tok not in SpacyWrapper.STOPLIST]
         if len(tmp) > 0:
