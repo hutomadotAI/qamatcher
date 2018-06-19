@@ -15,10 +15,12 @@ class SpacyWrapper(object):
     # A custom stoplist
     STOPLIST = set(
         stopwords.words('english') + [u"n't", u"'s", u"'m", u"ca"] +
-        list(ENGLISH_STOP_WORDS))  #
+        list(ENGLISH_STOP_WORDS))
+    STOPLIST = set([s for s in STOPLIST
+                    if s not in ['why', 'when', 'where', 'why', 'how', 'which', 'what', 'whose', 'whom']])
     # List of symbols we don't care about
     SYMBOLS = " ".join(string.punctuation).split(" ") + [
-        u"-----", u"---", u"...", u"“", u"”", u"'ve"
+        u"-----", u"---", u"...", u"“", u"”", u'"', u"'ve"
     ]
 
     def __init__(self):
@@ -28,7 +30,7 @@ class SpacyWrapper(object):
 
     def tokenizeSpacy(self, sample):
         # get the tokens using spaCy
-        self.logger.info("**** sample: {}".format(sample))
+        # self.logger.info("**** sample: {}".format(sample))
         tokens = SpacyWrapper.parser(sample)
 
         # lemmatize
@@ -43,8 +45,6 @@ class SpacyWrapper(object):
                 lemmas.append(tok.lower_)
 
         tokens = lemmas
-
-        # tokens = [tok.orth_ for tok in tokens]
 
         # stoplist symbols
         tokens = [tok for tok in tokens if tok not in SpacyWrapper.SYMBOLS]
