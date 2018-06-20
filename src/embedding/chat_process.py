@@ -71,7 +71,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
 
             cls.update_w2v(vecs)
             yPred, yProbs = cls.predict(x_tokens_testset)
-            resp = ait_c.ChatResponseMessage(msg, yPred[0], yProbs[0].astype(str))
+            resp = ait_c.ChatResponseMessage(msg, yPred[0], float(yProbs[0]))
             return resp
 
         resp = ait_c.ChatResponseMessage(msg, None, 0.0)
