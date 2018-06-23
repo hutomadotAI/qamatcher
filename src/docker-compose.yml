@@ -9,6 +9,8 @@ services:
     volumes:
       - ../../word2vec/src/word2vec:/src/word2vec
       - ../../word2vec/src/datasets:/datasets
+    ports:
+      - 10002:9090
     environment:
     - W2V_SERVER_PORT=9090
     - W2V_VECTOR_FILE=/datasets/glove.840B.300d.txt
@@ -19,9 +21,11 @@ services:
     volumes:
       - ./embedding:/src/embedding
       - ./ai:/ai
+    ports:
+      - 10001:9090
     environment:
     - AI_CHAT_CAPACITY=1
     - AI_TRAIN_CAPACITY=1
     - EMB_SERVER_PORT=9090
-    - W2V_SERVER_URL=http://ai-word2vec:9090
-
+    # - W2V_SERVER_URL=http://ai-word2vec:9090
+    - W2V_SERVER_URL=http://dev.hutoma.com:8081

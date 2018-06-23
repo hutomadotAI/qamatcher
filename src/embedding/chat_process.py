@@ -18,6 +18,10 @@ def _get_logger():
     return logger
 
 
+class Word2VecFailureError(Exception):
+    """Failure in Word2Vec"""
+    pass
+
 class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
 
     __spacy_wrapper = None
@@ -27,8 +31,8 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         self.chatter = None
         self.chat_args = None
         self.ai = None
-        self.is_ready = False
         self.logger = _get_logger()
+        self.cls = None
         self.w2v_client = Word2VecClient(
             SvcConfig.get_instance().w2v_server_url)
 
@@ -41,45 +45,44 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
 
     async def start_chat(self, msg: ait_c.WakeChatMessage):
         """Handle a wake request"""
+        self.logger.info("Started chat process for AI %s" % msg.ai_id)
+        if EmbeddingChatProcessWorker.__spacy_wrapper is None:
+            EmbeddingChatProcessWorker.__spacy_wrapper = SpacyWrapper()
+        self.setup_chat_session()
+
 
     async def chat_request(self, msg: ait_c.ChatRequestMessage):
         """Handle a chat request"""
-        if msg.update_state or self.chatter is None:
+        if msg.update_state:
             self.setup_chat_session()
 
-        if self.is_ready:
-            _ = msg.question.split(' ')
-            question_list = []
-            question_list.append(msg.question)
-            x_tokens_testset = [
-                EmbeddingChatProcessWorker.__spacy_wrapper.tokenizeSpacy(s)
-                for s in question_list
-            ]
+        _ = msg.question.split(' ')
+        question_list = []
+        question_list.append(msg.question)
+        x_tokens_testset = [
+            EmbeddingChatProcessWorker.__spacy_wrapper.tokenizeSpacy(s)
+            for s in question_list
+        ]
 
-            unique_tokens = list(set([w for l in x_tokens_testset for w in l]))
-            cls = EmbeddingComparison()
-            cls.load_model(self.ai_path + "/" + MODEL_FILE)
-            unk_tokens = cls.get_unknown_words(unique_tokens)
+        unique_tokens = list(set([w for l in x_tokens_testset for w in l]))
+        unk_tokens = self.cls.get_unknown_words(unique_tokens)
 
-            try:
-                vecs = await self.w2v_client.get_vectors_for_words(unk_tokens)
-            except aiohttp.client_exceptions.ClientConnectorError as exc:
-                self.logger.warn(
-                    "Could not receive response from w2v service - {}".format(
-                        exc))
-                return ait_c.ChatResponseMessage(msg, None, 0.0)
+        try:
+            vecs = await self.w2v_client.get_vectors_for_words(unk_tokens)
+        except aiohttp.client_exceptions.ClientConnectorError as exc:
+            self.logger.error(
+                "Could not receive response from w2v service - {}".format(
+                    exc))
+            raise Word2VecFailureError()
 
-            cls.update_w2v(vecs)
-            yPred, yProbs = cls.predict(x_tokens_testset)
-            resp = ait_c.ChatResponseMessage(msg, yPred[0], float(yProbs[0]))
-            return resp
-
-        resp = ait_c.ChatResponseMessage(msg, None, 0.0)
+        self.cls.update_w2v(vecs)
+        yPred, yProbs = self.cls.predict(x_tokens_testset)
+        resp = ait_c.ChatResponseMessage(msg, yPred[0], float(yProbs[0]))
         return resp
 
+
     def setup_chat_session(self):
+        self.logger.info("Reloading model for AI %s" % self.ai_id)
+        self.cls = EmbeddingComparison()
+        self.cls.load_model(self.ai_path + "/" + MODEL_FILE)
 
-        if EmbeddingChatProcessWorker.__spacy_wrapper is None:
-            EmbeddingChatProcessWorker.__spacy_wrapper = SpacyWrapper()
-
-        self.is_ready = True
