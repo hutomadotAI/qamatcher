@@ -66,7 +66,7 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
         try:
             vecs = await self.get_vectors(list(words.keys()))
         except aiohttp.client_exceptions.ClientConnectorError as exc:
-            self.logger.warn(
+            self.logger.error(
                 "Could not receive response from w2v service - {}".format(exc))
             return ait.AiTrainingState.ai_error, None
 

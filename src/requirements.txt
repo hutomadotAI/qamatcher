@@ -13,4 +13,4 @@ pyyaml==3.12.0
 # add dependencies
 hu_logging==0.3.24
 hu_utils==0.3.25
-hu_training==0.3.27
+hu_training==0.3.30
