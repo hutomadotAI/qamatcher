@@ -12,12 +12,21 @@ class SpacyWrapper(object):
 
     parser = None
 
-    # A custom stoplist
-    STOPLIST = set(
-        stopwords.words('english') + [u"n't", u"'s", u"'m", u"ca"] +
-        list(ENGLISH_STOP_WORDS))
+    # A custom stoplist taken from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS
+    CUSTOM_STOPLIST = ['much', 'herein', 'thru', 'per', 'somehow', 'throughout', 'almost', 'somewhere', 'whereafter',
+                       'nevertheless', 'indeed', 'hereby', 'across', 'within', 'co', 'yet', 'elsewhere', 'whence',
+                       'seeming', 'un', 'whither', 'mine', 'whether', 'also', 'thus', 'amongst', 'thereafter',
+                       'mostly', 'amoungst', 'therefore', 'seems', 'something', 'thereby', 'others', 'hereupon', 'us',
+                       'everyone', 'perhaps', 'please', 'hence', 'due', 'seemed', 'else', 'beside', 'therein',
+                       'couldnt', 'moreover', 'anyway', 'whatever', 'anyhow', 'de', 'among', 'besides', 'though',
+                       'either', 'rather', 'might', 'noone', 'eg', 'thereupon', 'may', 'namely', 'ie', 'sincere',
+                       'whereby', 'con', 'latterly', 'becoming', 'meanwhile', 'afterwards', 'thence', 'whoever',
+                       'otherwise', 'anything', 'however', 'whereas', 'although', 'hereafter', 'already', 'beforehand',
+                       'etc', 'whenever', 'even', 'someone', 'whereupon', 'inc', 'sometimes', 'ltd', 'cant']
+    STOPLIST = stopwords.words('english') + [u"n't", u"'s", u"'m", u"ca"] + CUSTOM_STOPLIST
     STOPLIST = set([s for s in STOPLIST
                     if s not in ['why', 'when', 'where', 'why', 'how', 'which', 'what', 'whose', 'whom']])
+    
     # List of symbols we don't care about
     SYMBOLS = " ".join(string.punctuation).split(" ") + [
         u"-----", u"---", u"...", u"“", u"”", u'"', u"'ve"
