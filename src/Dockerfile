@@ -32,7 +32,7 @@ USER appuser
 WORKDIR /home/appuser
 
 # Get the NLTK corpus data
-RUN python -m nltk.downloader stopwords
+RUN python -m nltk.downloader stopwords brown
 
 ENV EMB_SERVER_PORT 9090
 
