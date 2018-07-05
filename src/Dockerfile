@@ -15,11 +15,13 @@ ENV PIP_NO_CACHE_DIR=false
 RUN pip install --upgrade pip pipenv
 
 # Apply the pipenv
-COPY Pipfile* /
+RUN mkdir -p /src/embedding
+COPY Pipfile* setup.py /src/
+WORKDIR /src
 RUN pipenv install --system
 
-# Run script to download models for languages we require
-RUN python -m spacy download en
+COPY initialize_model_data.py /src/
+RUN python initialize_model_data.py
 
 # Copy the code
 COPY embedding/ /src/embedding/
@@ -37,11 +39,10 @@ RUN mkdir /ai && chown appuser:appuser /ai
 USER appuser
 WORKDIR /home/appuser
 
-# Get the NLTK corpus data
+# Get the NLTK corpus data for appuser
 RUN python -m nltk.downloader stopwords brown
 
 ENV EMB_SERVER_PORT 9090
-
 
 EXPOSE 9090
 

@@ -23,6 +23,7 @@ hu_training = {version="*", index="hu_pypi"}
 embedding = {editable = true, path = "."}
 
 [dev-packages]
+colorama = {version="*", index="pypi"}
 pytest = {version="*", index="pypi"}
 pytest-aiohttp = {version="*", index="pypi"}
 pytest-cov = {version="*", index="pypi"}
