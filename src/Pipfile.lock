@@ -104,24 +104,24 @@
         },
         "hu-logging": {
             "hashes": [
-                "sha256:138212b36bb6c9d378507ab80ed8e37ae86d19cd22426311c687e3d02ca0e2f6"
+                "sha256:17cbc01eaf71eee35c17531312af3d416e42fc8198b3feb08ff47fb69b1d3512"
             ],
             "index": "hu_pypi",
-            "version": "==0.3.24"
+            "version": "==0.3.32"
         },
         "hu-training": {
             "hashes": [
-                "sha256:a8c157db99786ef9304e860d1766a2d36bbfbaec7186954f08906ffa1b05a059"
+                "sha256:997dce236d8c4f5a47d399ae6dc99779c5ebf677b65da049cad445e217f18f10"
             ],
             "index": "hu_pypi",
-            "version": "==0.3.30"
+            "version": "==0.3.32"
         },
         "hu-utils": {
             "hashes": [
-                "sha256:e699e8a54f0a317c2fbcf26af15f13ca06275e70224704bfd93d0e64b0259d0a"
+                "sha256:d75a2ab0e8b72cb845137df654b161ebf6b752f939cae68f8987b31150aafd29"
             ],
             "index": "hu_pypi",
-            "version": "==0.3.25"
+            "version": "==0.3.32"
         },
         "idna": {
             "hashes": [
@@ -537,10 +537,10 @@
         },
         "hu-build": {
             "hashes": [
-                "sha256:d29227fe0afb4d865579b70d1139f7403a60facf77dbe40a3516c037bb1a269e"
+                "sha256:3fd0f8fe2fdaf8cf0911f4a414bf53b881f069d716d13320c03c4a27f609833f"
             ],
             "index": "hu_pypi",
-            "version": "==0.3.29"
+            "version": "==0.3.32"
         },
         "idna": {
             "hashes": [
