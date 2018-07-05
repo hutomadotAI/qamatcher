@@ -3,8 +3,7 @@
 
 import string
 import logging
-from nltk.corpus import stopwords, brown
-from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS
+from nltk.corpus import stopwords
 import spacy
 
 
@@ -32,8 +31,6 @@ class SpacyWrapper(object):
         u"-----", u"---", u"...", u"“", u"”", u'"', u"'ve"
     ]
 
-    COMMON_EN_WORDS_LIST = set(brown.words())
-
     def __init__(self):
         self.logger = logging.getLogger('spacy.tokenizer')
         if SpacyWrapper.parser is None:
@@ -47,10 +44,7 @@ class SpacyWrapper(object):
         # lemmatize
         lemmas = []
         for tok in tokens:
-            # don't lemmatize or lower case if word is all caps
-            if tok.text.isupper() and tok.lower_ in SpacyWrapper.COMMON_EN_WORDS_LIST:
-                lemmas.append(tok.text)
-            elif tok.lemma_ != "-PRON-":
+            if tok.lemma_ != "-PRON-":
                 lemmas.append(tok.lemma_.lower().strip())
             else:
                 lemmas.append(tok.lower_)
