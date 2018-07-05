@@ -16,18 +16,19 @@ scipy = {version="*", index="pypi"}
 spacy = {version="*", index="pypi"}
 sklearn = {version="*", index="pypi"}
 pyyaml = {version="*", index="pypi"}
-
-
 # internal libraries
 hu_logging = {version="*", index="hu_pypi"}
 hu_utils = {version="*", index="hu_pypi"}
 hu_training = {version="*", index="hu_pypi"}
-
+embedding = {editable = true, path = "."}
 
 [dev-packages]
+pytest = {version="*", index="pypi"}
+pytest-aiohttp = {version="*", index="pypi"}
+pytest-cov = {version="*", index="pypi"}
+pytest-timeout = {version="*", index="pypi"}
 flake8 = {version="*", index="pypi"}
 yapf = {version="*", index="pypi"}
-
 hu_build = {version="*", index="hu_pypi"}
 
 [requires]

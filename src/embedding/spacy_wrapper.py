@@ -4,7 +4,6 @@
 import string
 import logging
 from nltk.corpus import stopwords, brown
-from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS
 import spacy
 
 
@@ -37,7 +36,7 @@ class SpacyWrapper(object):
     def __init__(self):
         self.logger = logging.getLogger('spacy.tokenizer')
         if SpacyWrapper.parser is None:
-            SpacyWrapper.parser = spacy.load('en')
+            SpacyWrapper.parser = spacy.load('en_core_web_sm')
 
     def tokenizeSpacy(self, sample):
         # get the tokens using spaCy
