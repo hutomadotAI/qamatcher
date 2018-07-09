@@ -7,9 +7,10 @@ on_error() {
 }
 trap on_error ERR
 
-SCRIPT_DIR=`dirname $BASH_SOURCE`
-echo "*** Setting up venv ***"
-source "${SCRIPT_DIR}/setup_python.sh" || exit $?
 
-echo "*** Doing build ***"
-python "${SCRIPT_DIR}/build.py" $*
+SCRIPT_DIR=`dirname $BASH_SOURCE`
+
+pushd $SCRIPT_DIR/../src
+python3 -m pipenv sync --dev
+python3 -m pipenv run python initialize_model_data.py
+python3 -m pipenv run python ../scripts/build.py $*
