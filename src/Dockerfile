@@ -4,7 +4,7 @@ LABEL maintainer "Pedro Teixeira <pedrotei@hutoma.com>"
 
 RUN apt-get update \
  && apt install -y --no-install-recommends \
-  build-essential \
+  build-essential tk\
  && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir --upgrade pip
@@ -13,7 +13,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
 # Run script to download models for languages we require
-RUN python -m spacy download en
+RUN python -m spacy download en_core_web_md
 
 # Copy the code
 COPY embedding/ /src/embedding/

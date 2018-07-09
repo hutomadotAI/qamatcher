@@ -10,12 +10,14 @@ import ai_training.training_process as aitp
 import ai_training.training_file as aitp_tfile
 
 from text_classifier_class import EmbeddingComparison
+from entity_matcher import EntityMatcher
 from spacy_wrapper import SpacyWrapper
 
 from word2vec_client import Word2VecClient
 from svc_config import SvcConfig
 
 MODEL_FILE = "model.pkl"
+DATA_FILE = "data.pkl"
 
 
 def _get_logger():
@@ -54,9 +56,15 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
         self.logger.info("Start training using file {}".format(training_file))
         x, y = self.load_train_data(training_file)
 
+        self.logger.info("Extracting entities...")
+        ent_matcher = EntityMatcher()
+        entities = [ent_matcher.extract_entities(s) for s in x]
+        ent_matcher.save_data(DATA_FILE, entities, y)
+
         spacy_wrapper = SpacyWrapper()
         self.logger.info("Tokenizing...")
         x_tokens = [spacy_wrapper.tokenizeSpacy(s) for s in x]
+        self.logger.info("tokens: {}".format([(xx, toks) for xx, toks in zip(x, x_tokens)]))
         x_tokens_set = list(set([w for l in x_tokens for w in l]))
 
         words = {}

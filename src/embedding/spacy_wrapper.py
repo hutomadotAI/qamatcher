@@ -3,6 +3,7 @@
 
 import string
 import logging
+import re
 from nltk.corpus import stopwords
 import spacy
 
@@ -34,12 +35,32 @@ class SpacyWrapper(object):
     def __init__(self):
         self.logger = logging.getLogger('spacy.tokenizer')
         if SpacyWrapper.parser is None:
-            SpacyWrapper.parser = spacy.load('en')
+            SpacyWrapper.parser = spacy.load('en_core_web_md')
+
+    def extract_entities(self, sample):
+        tokens = SpacyWrapper.parser(sample)
+        return tokens.ents
+
+    def shadow_entities(self, tokens, sample):
+        # substitute names
+        for e in tokens.ents:
+            if e.label_ is 'PERSON':
+                sample = re.sub(e.text, e.label_, sample)
+
+        # substitute numbers
+        for i, token in enumerate(tokens):
+            if token.text.replace(".", "", 1).isdigit():
+                sample = re.sub(token.text, 'NUM', sample)
+
+        tokens = SpacyWrapper.parser(sample)
+        return tokens
 
     def tokenizeSpacy(self, sample):
         # get the tokens using spaCy
         # self.logger.info("**** sample: {}".format(sample))
         tokens = SpacyWrapper.parser(sample)
+
+        tokens = self.shadow_entities(tokens, sample)
 
         # lemmatize
         lemmas = []
@@ -70,3 +91,4 @@ class SpacyWrapper(object):
             tokens.remove("\n\n")
 
         return tokens
+

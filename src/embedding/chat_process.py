@@ -5,12 +5,16 @@ import numpy
 
 import ai_training.chat_process as ait_c
 from spacy_wrapper import SpacyWrapper
+from entity_matcher import EntityMatcher
 from text_classifier_class import EmbeddingComparison
 from word2vec_client import Word2VecClient
 from svc_config import SvcConfig
 import aiohttp
 
 MODEL_FILE = "model.pkl"
+DATA_FILE = "data.pkl"
+THRESHOLD = 0.5
+ENTITY_MATCH_PROBA = 0.6
 
 
 def _get_logger():
@@ -25,6 +29,7 @@ class Word2VecFailureError(Exception):
 class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
 
     __spacy_wrapper = None
+    __entity_matcher = None
 
     def __init__(self, pool, asyncio_loop):
         super().__init__(pool, asyncio_loop)
@@ -48,6 +53,8 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         self.logger.info("Started chat process for AI %s" % msg.ai_id)
         if EmbeddingChatProcessWorker.__spacy_wrapper is None:
             EmbeddingChatProcessWorker.__spacy_wrapper = SpacyWrapper()
+        if EmbeddingChatProcessWorker.__entity_matcher is None:
+            EmbeddingChatProcessWorker.__entity_matcher = EntityMatcher()
         self.setup_chat_session()
 
 
@@ -56,14 +63,17 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         if msg.update_state:
             self.setup_chat_session()
 
-        _ = msg.question.split(' ')
-        question_list = []
-        question_list.append(msg.question)
-        x_tokens_testset = [
-            EmbeddingChatProcessWorker.__spacy_wrapper.tokenizeSpacy(s)
-            for s in question_list
-        ]
+        test_entities = EmbeddingChatProcessWorker.__entity_matcher.extract_entities(msg.question)
+        train_entities = EmbeddingChatProcessWorker.__entity_matcher.load_data(DATA_FILE)
+        matched_answer = EmbeddingChatProcessWorker.__entity_matcher.match_entities(train_entities, test_entities)
+        self.logger.info("matched_entities: {}".format(matched_answer))
+        # self.logger.info("train: {} test: {}".format(train_entities, test_entities))
 
+        _ = msg.question.split(' ')
+        x_tokens_testset = [
+            EmbeddingChatProcessWorker.__spacy_wrapper.tokenizeSpacy(msg.question)
+        ]
+        self.logger.info("x_tokens_testset: {}".format(x_tokens_testset))
         unique_tokens = list(set([w for l in x_tokens_testset for w in l]))
         unk_tokens = self.cls.get_unknown_words(unique_tokens)
 
@@ -77,6 +87,10 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
 
         self.cls.update_w2v(vecs)
         yPred, yProbs = self.cls.predict(x_tokens_testset)
+        if yProbs[0] < THRESHOLD and matched_answer:
+            self.logger.info("substituting {} for entity match {}".format(yPred, matched_answer))
+            yPred = [matched_answer]
+            yProbs = [ENTITY_MATCH_PROBA]
         resp = ait_c.ChatResponseMessage(msg, yPred[0], float(yProbs[0]))
         return resp
 

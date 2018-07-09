@@ -5,6 +5,9 @@ scipy==1.0.0
 spacy==2.0.9
 sklearn==0.0
 pyyaml==3.12.0
+tabulate
+matplotlib
+
 
 # Add the local PYPI server
 --trusted-host dev-web.hutoma.com

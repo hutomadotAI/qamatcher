@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  # Assumes word2vec GIT is in same parent folder as embedding GIT.
+#   Assumes word2vec GIT is in same parent folder as embedding GIT.
   ai-word2vec:
     build:
       context: ../../word2vec/src
