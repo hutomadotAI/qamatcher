@@ -45,12 +45,18 @@ class SpacyWrapper(object):
         # substitute names
         for e in tokens.ents:
             if e.label_ is 'PERSON':
-                sample = re.sub(e.text, '', sample)
+                if len(re.sub(e.text, '', sample)) > 0:
+                    sample = re.sub(e.text, '', sample)
+                else:
+                    sample = re.sub(e.text, 'PERSON', sample)
 
         # substitute numbers
         for i, token in enumerate(tokens):
             if token.text.replace(".", "", 1).isdigit():
-                sample = re.sub(token.text, '', sample)
+                if len(re.sub(token.text, '', sample)) > 0:
+                    sample = re.sub(token.text, '', sample)
+                else:
+                    sample = re.sub(token.text, 'NUM', sample)
 
         tokens = SpacyWrapper.parser(sample)
         return tokens
