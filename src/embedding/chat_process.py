@@ -67,7 +67,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         train_entities = EmbeddingChatProcessWorker.__entity_matcher.load_data(DATA_FILE)
         matched_answer = EmbeddingChatProcessWorker.__entity_matcher.match_entities(train_entities, test_entities)
         self.logger.info("matched_entities: {}".format(matched_answer))
-        # self.logger.info("train: {} test: {}".format(train_entities, test_entities))
+        self.logger.info("train: {} test: {}".format(train_entities, test_entities))
 
         _ = msg.question.split(' ')
         x_tokens_testset = [

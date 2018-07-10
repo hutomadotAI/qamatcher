@@ -41,7 +41,7 @@ class SpacyWrapper(object):
         tokens = SpacyWrapper.parser(sample)
         return tokens.ents
 
-    def shadow_entities(self, tokens, sample):
+    def mask_entities(self, tokens, sample):
         # substitute names
         for e in tokens.ents:
             if e.label_ is 'PERSON':
@@ -60,7 +60,7 @@ class SpacyWrapper(object):
         # self.logger.info("**** sample: {}".format(sample))
         tokens = SpacyWrapper.parser(sample)
 
-        tokens = self.shadow_entities(tokens, sample)
+        tokens = self.mask_entities(tokens, sample)
 
         # lemmatize
         lemmas = []

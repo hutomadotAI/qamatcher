@@ -10,7 +10,7 @@ RUN apt-get update \
 RUN pip install --no-cache-dir --upgrade pip
 # Copy common code
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
+RUN pip install --upgrade -r requirements.txt
 
 # Run script to download models for languages we require
 RUN python -m spacy download en_core_web_md

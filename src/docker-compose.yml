@@ -2,18 +2,18 @@ version: '3'
 
 services:
 #   Assumes word2vec GIT is in same parent folder as embedding GIT.
-  ai-word2vec:
-    build:
-      context: ../../word2vec/src
-      dockerfile: Dockerfile
-    volumes:
-      - ../../word2vec/src/word2vec:/src/word2vec
-      - ../../word2vec/src/datasets:/datasets
-    ports:
-      - 10002:9090
-    environment:
-    - W2V_SERVER_PORT=9090
-    - W2V_VECTOR_FILE=/datasets/glove.840B.300d.txt
+#  ai-word2vec:
+#    build:
+#      context: ../../word2vec/src
+#      dockerfile: Dockerfile
+#    volumes:
+#      - ../../word2vec/src/word2vec:/src/word2vec
+#      - ../../word2vec/src/datasets:/datasets
+#    ports:
+#      - 10002:9090
+#    environment:
+#    - W2V_SERVER_PORT=9090
+#    - W2V_VECTOR_FILE=/datasets/glove.840B.300d.txt
   
   ai-embedding:
     build:
@@ -28,4 +28,5 @@ services:
     - AI_TRAIN_CAPACITY=1
     - EMB_SERVER_PORT=9090
     # - W2V_SERVER_URL=http://ai-word2vec:9090
-    - W2V_SERVER_URL=http://dev.hutoma.com:8081
+#    - W2V_SERVER_URL=http://dev.hutoma.com:8081
+    - W2V_SERVER_URL=http://dev-gpu1.hutoma.ai:9090
