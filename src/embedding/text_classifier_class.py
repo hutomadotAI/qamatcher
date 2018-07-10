@@ -11,6 +11,9 @@ from sklearn.decomposition import PCA
 import logging
 import logging.config
 
+from investigate import tsne_plot
+from pathlib import Path
+
 
 def _get_logger():
     logger = logging.getLogger('embedding')
@@ -105,6 +108,7 @@ class EmbeddingComparison(object):
         self.pca.fit(self.X_tfidf)
         self.X_tfidf = self.X_tfidf - self.pca.components_[0]
         self.y = np.array(y)
+        self.X = X
         self.classes = list(set(y))
 
     def predict(self, X, scale_probas=False):
@@ -114,12 +118,13 @@ class EmbeddingComparison(object):
         # compute cosine similarity
         cossim = np.dot(target_tfidf, self.X_tfidf.T) / (
             np.outer(np.linalg.norm(target_tfidf, axis=1), np.linalg.norm(self.X_tfidf, axis=1)))
+        # self.logger.info("cossim: {}".format(cossim))
+        cossim = np.where(cossim < 0., 0., cossim)
 
         # most similar vector is the predicted class
         preds = np.argmax(cossim, 1)
         preds = [self.y[i] for i in preds]
         probs = self.downscale_probas(np.max(cossim, axis=1))
-        # self.__logger.info("probs: {} max dist: {}".format(probs, np.max(cossim, axis=1)))
 
         return preds, list(probs)
 
@@ -127,7 +132,7 @@ class EmbeddingComparison(object):
         self.__logger.debug("Saving model to {}".format(file_path))
         with open(file_path, 'wb') as f:
             dill.dump([self.X_tfidf, self.y, self.pca, self.classes,
-                       self.vectorizer.word2weight, self.w2v], f)
+                       self.vectorizer.word2weight, self.w2v], f)  # , self.X
         return file_path
 
     def load_model(self, file_path):
@@ -146,6 +151,7 @@ class EmbeddingComparison(object):
         self.pca = m[2]
         self.classes = m[3]
         self.update_w2v(m[5])
+        # self.X = m[6]
 
     def get_classes(self):
         return self.y

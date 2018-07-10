@@ -7,7 +7,7 @@ RUN echo "2018-07-04" > /os_patch_date.txt
 RUN apt-get update \
  && apt-get upgrade -y \
  && apt install -y --no-install-recommends \
-  build-essential \
+  build-essential tk\
  && rm -rf /var/lib/apt/lists/*
 
 # Install pipenv

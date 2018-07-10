@@ -1,16 +1,19 @@
 """SVCLASSIFIER chat worker processes"""
 
 import logging
-import numpy
 
 import ai_training.chat_process as ait_c
 from spacy_wrapper import SpacyWrapper
+from entity_matcher import EntityMatcher
 from text_classifier_class import EmbeddingComparison
 from word2vec_client import Word2VecClient
 from svc_config import SvcConfig
 import aiohttp
 
 MODEL_FILE = "model.pkl"
+DATA_FILE = "data.pkl"
+THRESHOLD = 0.5
+ENTITY_MATCH_PROBA = 0.7
 
 
 def _get_logger():
@@ -24,8 +27,6 @@ class Word2VecFailureError(Exception):
 
 class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
 
-    __spacy_wrapper = None
-
     def __init__(self, pool, asyncio_loop):
         super().__init__(pool, asyncio_loop)
         self.chatter = None
@@ -35,6 +36,9 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         self.cls = None
         self.w2v_client = Word2VecClient(
             SvcConfig.get_instance().w2v_server_url)
+        self.spacy_wrapper = SpacyWrapper()
+        self.entity_matcher = EntityMatcher(spacy=self.spacy_wrapper)
+        self.train_entities = None
 
     async def __aenter__(self):
         return self
@@ -46,8 +50,6 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
     async def start_chat(self, msg: ait_c.WakeChatMessage):
         """Handle a wake request"""
         self.logger.info("Started chat process for AI %s" % msg.ai_id)
-        if EmbeddingChatProcessWorker.__spacy_wrapper is None:
-            EmbeddingChatProcessWorker.__spacy_wrapper = SpacyWrapper()
         self.setup_chat_session()
 
 
@@ -56,14 +58,10 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         if msg.update_state:
             self.setup_chat_session()
 
-        _ = msg.question.split(' ')
-        question_list = []
-        question_list.append(msg.question)
         x_tokens_testset = [
-            EmbeddingChatProcessWorker.__spacy_wrapper.tokenizeSpacy(s)
-            for s in question_list
+            self.spacy_wrapper.tokenizeSpacy(msg.question)
         ]
-
+        self.logger.info("x_tokens_testset: {}".format(x_tokens_testset))
         unique_tokens = list(set([w for l in x_tokens_testset for w in l]))
         unk_tokens = self.cls.get_unknown_words(unique_tokens)
 
@@ -77,6 +75,15 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
 
         self.cls.update_w2v(vecs)
         yPred, yProbs = self.cls.predict(x_tokens_testset)
+        if yProbs[0] < THRESHOLD:
+            matched_answer = self.entity_matcher.match_entities(
+                self.train_entities, msg.question)
+            self.logger.info("matched_entities: {}".format(matched_answer))
+            self.logger.info("train: {} test: {}".format(self.train_entities, msg.question))
+            if matched_answer:
+                self.logger.info("substituting {} for entity match {}".format(yPred, matched_answer))
+                yPred = [matched_answer]
+                yProbs = [ENTITY_MATCH_PROBA]
         resp = ait_c.ChatResponseMessage(msg, yPred[0], float(yProbs[0]))
         return resp
 
@@ -85,4 +92,5 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         self.logger.info("Reloading model for AI %s" % self.ai_id)
         self.cls = EmbeddingComparison()
         self.cls.load_model(self.ai_path + "/" + MODEL_FILE)
+        self.train_entities = self.entity_matcher.load_data(DATA_FILE)
 

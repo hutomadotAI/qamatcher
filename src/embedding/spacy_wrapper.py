@@ -3,7 +3,8 @@
 
 import string
 import logging
-from nltk.corpus import stopwords, brown
+import re
+from nltk.corpus import stopwords
 import spacy
 
 
@@ -31,25 +32,42 @@ class SpacyWrapper(object):
         u"-----", u"---", u"...", u"“", u"”", u'"', u"'ve"
     ]
 
-    COMMON_EN_WORDS_LIST = set(brown.words())
-
     def __init__(self):
         self.logger = logging.getLogger('spacy.tokenizer')
         if SpacyWrapper.parser is None:
-            SpacyWrapper.parser = spacy.load('en_core_web_sm')
+            SpacyWrapper.parser = spacy.load('en_core_web_md')
+
+    def mask_entities(self, tokens, sample):
+        # substitute names
+        for e in tokens.ents:
+            if e.label_ is 'PERSON':
+                if len(re.sub(e.text, '', sample)) > 0:
+                    sample = re.sub(e.text, '', sample)
+                else:
+                    sample = re.sub(e.text, 'PERSON', sample)
+
+        # substitute numbers
+        for i, token in enumerate(tokens):
+            if token.text.replace(".", "", 1).isdigit():
+                if len(re.sub(token.text, '', sample)) > 0:
+                    sample = re.sub(token.text, '', sample)
+                else:
+                    sample = re.sub(token.text, 'NUM', sample)
+
+        tokens = SpacyWrapper.parser(sample)
+        return tokens
 
     def tokenizeSpacy(self, sample):
         # get the tokens using spaCy
         # self.logger.info("**** sample: {}".format(sample))
         tokens = SpacyWrapper.parser(sample)
 
+        tokens = self.mask_entities(tokens, sample)
+
         # lemmatize
         lemmas = []
         for tok in tokens:
-            # don't lemmatize or lower case if word is all caps
-            if tok.text.isupper() and tok.lower_ in SpacyWrapper.COMMON_EN_WORDS_LIST:
-                lemmas.append(tok.text)
-            elif tok.lemma_ != "-PRON-":
+            if tok.lemma_ != "-PRON-":
                 lemmas.append(tok.lemma_.lower().strip())
             else:
                 lemmas.append(tok.lower_)
@@ -75,3 +93,4 @@ class SpacyWrapper(object):
             tokens.remove("\n\n")
 
         return tokens
+

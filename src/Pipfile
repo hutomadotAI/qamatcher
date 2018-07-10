@@ -16,6 +16,7 @@ scipy = {version="*", index="pypi"}
 spacy = {version="*", index="pypi"}
 sklearn = {version="*", index="pypi"}
 pyyaml = {version="*", index="pypi"}
+matplotlib = {version="*", index="pypi"}
 # internal libraries
 hu_logging = {version="*", index="hu_pypi"}
 hu_utils = {version="*", index="hu_pypi"}

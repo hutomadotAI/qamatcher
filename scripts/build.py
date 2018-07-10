@@ -17,7 +17,7 @@ def main(build_args):
     """Main function"""
     src_path = ROOT_DIR / 'src'
     if not build_args.no_test:
-        hu_build.build_package.package_test('emb', src_path)
+        hu_build.build_package.package_test('emb', src_path, timeout=60)
     if build_args.docker_build:
         tag_version = build_args.version
         docker_image = DockerImage(

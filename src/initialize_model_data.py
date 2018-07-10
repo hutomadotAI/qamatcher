@@ -48,7 +48,7 @@ def download_model(model, version):
 
 if __name__ == "__main__":
     print("*** Initialize Model script")
-    LANGUAGES = [('en_core_web_sm', '2.0.0')]
+    LANGUAGES = [('en_core_web_md', '2.0.0')]
 
     print("***********************************************************")
     print("*** Spacy models")
