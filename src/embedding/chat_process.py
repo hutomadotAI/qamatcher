@@ -1,7 +1,6 @@
 """SVCLASSIFIER chat worker processes"""
 
 import logging
-import numpy
 
 import ai_training.chat_process as ait_c
 from spacy_wrapper import SpacyWrapper
@@ -63,7 +62,6 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         if msg.update_state:
             self.setup_chat_session()
 
-        # test_entities = EmbeddingChatProcessWorker.__entity_matcher.extract_entities(msg.question)
         train_entities = EmbeddingChatProcessWorker.__entity_matcher.load_data(DATA_FILE)
         matched_answer = EmbeddingChatProcessWorker.__entity_matcher.match_entities(train_entities, msg.question)
         self.logger.info("matched_entities: {}".format(matched_answer))
