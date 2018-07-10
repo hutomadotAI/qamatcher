@@ -16,8 +16,8 @@ class EntityMatcher(object):
         ents = self.tokenizer.extract_entities(sample)
         return [e.text for e in ents]
 
-    def match_entities(self, train_ents, test_ents):
-        matches = np.array([sum([e in tr_ents for e in test_ents]) for tr_ents in train_ents])
+    def match_entities(self, train_ents, test_q):
+        matches = np.array([sum([(e in test_q or e.lower() in test_q) for e in tr_ents]) for tr_ents in train_ents])
         if max(matches):
             matched_label = self.train_labels[np.argmax(matches)]
         else:

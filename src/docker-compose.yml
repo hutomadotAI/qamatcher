@@ -29,5 +29,4 @@ services:
     - EMB_SERVER_PORT=9090
     # - W2V_SERVER_URL=http://ai-word2vec:9090
     - W2V_SERVER_URL=http://dev-gpu1.hutoma.ai:9090
-    - W2V_SERVER_URL=http://10.181.0.4:30100
->>>>>>> master
+#    - W2V_SERVER_URL=http://10.181.0.4:30100

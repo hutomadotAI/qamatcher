@@ -14,7 +14,7 @@ import aiohttp
 MODEL_FILE = "model.pkl"
 DATA_FILE = "data.pkl"
 THRESHOLD = 0.5
-ENTITY_MATCH_PROBA = 0.6
+ENTITY_MATCH_PROBA = 0.7
 
 
 def _get_logger():
@@ -63,11 +63,11 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         if msg.update_state:
             self.setup_chat_session()
 
-        test_entities = EmbeddingChatProcessWorker.__entity_matcher.extract_entities(msg.question)
+        # test_entities = EmbeddingChatProcessWorker.__entity_matcher.extract_entities(msg.question)
         train_entities = EmbeddingChatProcessWorker.__entity_matcher.load_data(DATA_FILE)
-        matched_answer = EmbeddingChatProcessWorker.__entity_matcher.match_entities(train_entities, test_entities)
+        matched_answer = EmbeddingChatProcessWorker.__entity_matcher.match_entities(train_entities, msg.question)
         self.logger.info("matched_entities: {}".format(matched_answer))
-        self.logger.info("train: {} test: {}".format(train_entities, test_entities))
+        self.logger.info("train: {} test: {}".format(train_entities, msg.question))
 
         _ = msg.question.split(' ')
         x_tokens_testset = [

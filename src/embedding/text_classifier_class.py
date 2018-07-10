@@ -3,7 +3,6 @@
 import dill
 import numpy as np
 from collections import defaultdict
-from tabulate import tabulate
 
 from sklearn.svm import SVC
 from sklearn.feature_extraction.text import TfidfVectorizer
