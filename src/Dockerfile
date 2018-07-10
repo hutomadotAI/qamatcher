@@ -23,8 +23,6 @@ RUN pipenv install --system
 COPY initialize_model_data.py /src/
 RUN python initialize_model_data.py
 
-RUN python -m spacy download en_core_web_md
-
 # Copy the code
 COPY embedding/ /src/embedding/
 
