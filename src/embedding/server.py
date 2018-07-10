@@ -11,8 +11,7 @@ import yaml
 
 import ai_training as ait
 from chat_process import EmbeddingChatProcessWorker
-from training_process import (TrainEmbedMessage,
-                              EmbedTrainingProcessWorker)
+from training_process import EmbedTrainingProcessWorker
 from svc_config import SvcConfig
 
 
@@ -82,21 +81,19 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
         for (dev_id, ai_id) in ai_list:
             self.create(dev_id, ai_id)
 
-        training_processes = self.config.training_capacity
+        training_processes = 1 if self.config.training_enabled else 0
         if training_processes > 0:
             training_queue_size = training_processes * 2
             self.training_pool = await self.controller.create_training_process_pool(
                 training_processes, training_queue_size,
                 EmbedTrainingProcessWorker)
 
-        chat_processes = self.config.chat_capacity
+        chat_processes = 1 if self.config.chat_enabled else 0
         if chat_processes > 0:
-            calc_processes = self.config.chat_capacity * 8
-
-            calc_queue_size = calc_processes * 2
+            calc_queue_size = chat_processes * 2
             self.process_pool2 = asyncio_utils.AsyncProcessPool(
                 self.controller.multiprocessing_manager, 'EMBEDDING_Calc',
-                asyncio_loop, calc_processes, calc_queue_size, calc_queue_size)
+                asyncio_loop, chat_processes, calc_queue_size, calc_queue_size)
             await self.process_pool2.initialize_processes(
                 EmbeddingChatProcessWorker)
 
