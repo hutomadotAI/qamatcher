@@ -56,12 +56,12 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
         self.logger.info("Start training using file {}".format(training_file))
         x, y = self.load_train_data(training_file)
 
+        spacy_wrapper = SpacyWrapper()
         self.logger.info("Extracting entities...")
-        ent_matcher = EntityMatcher()
+        ent_matcher = EntityMatcher(spacy=spacy_wrapper)
         entities = [ent_matcher.extract_entities(s) for s in x]
         ent_matcher.save_data(DATA_FILE, entities, y)
 
-        spacy_wrapper = SpacyWrapper()
         self.logger.info("Tokenizing...")
         x_tokens = [spacy_wrapper.tokenizeSpacy(s) for s in x]
         self.logger.info("tokens: {}".format([(xx, toks) for xx, toks in zip(x, x_tokens)]))

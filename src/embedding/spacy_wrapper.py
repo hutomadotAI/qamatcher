@@ -37,10 +37,6 @@ class SpacyWrapper(object):
         if SpacyWrapper.parser is None:
             SpacyWrapper.parser = spacy.load('en_core_web_md')
 
-    def extract_entities(self, sample):
-        tokens = SpacyWrapper.parser(sample)
-        return tokens.ents
-
     def mask_entities(self, tokens, sample):
         # substitute names
         for e in tokens.ents:
