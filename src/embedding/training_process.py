@@ -1,13 +1,15 @@
 """SVCLASSIFIER training worker processes"""
 import logging
-import itertools
-import os
 import datetime
+import shutil
+import tempfile
+from pathlib import Path
+
 import aiohttp
 
 import ai_training as ait
 import ai_training.training_process as aitp
-import ai_training.training_file as aitp_tfile
+
 
 from text_classifier_class import EmbeddingComparison
 from entity_matcher import EntityMatcher
@@ -39,6 +41,7 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
         self.logger = _get_logger()
         self.w2v_client = Word2VecClient(
             SvcConfig.get_instance().w2v_server_url)
+        self.spacy_wrapper = SpacyWrapper()
 
     async def get_vectors(self, questions):
         word_dict = {}
@@ -50,78 +53,54 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
 
     async def train(self, msg, topic: ait.Topic, callback_object):
 
-        training_file = os.path.join(
-            str(msg.ai_path), aitp_tfile.AI_TRAINING_STANDARD_FILE_NAME)
-        model_file = os.path.join(str(msg.ai_path), MODEL_FILE)
-        self.logger.info("Start training using file {}".format(training_file))
-        x, y = self.load_train_data(training_file)
+        training_file_path = msg.ai_path / ait.AI_TRAINING_STANDARD_FILE_NAME
+        self.logger.info("Start training using file {}".format(training_file_path))
+        root_topic = ait.file_load_training_data_v1(training_file_path)
 
-        spacy_wrapper = SpacyWrapper()
-        self.logger.info("Extracting entities...")
-        ent_matcher = EntityMatcher(spacy=spacy_wrapper)
-        entities = [ent_matcher.extract_entities(s) for s in x]
-        ent_matcher.save_data(DATA_FILE, entities, y)
+        q_and_a = [(entry.question, entry.answer) for entry in root_topic.entries]
+        x, y = zip(*q_and_a)
 
-        self.logger.info("Tokenizing...")
-        x_tokens = [spacy_wrapper.tokenizeSpacy(s) for s in x]
-        self.logger.info("tokens: {}".format([(xx, toks) for xx, toks in zip(x, x_tokens)]))
-        x_tokens_set = list(set([w for l in x_tokens for w in l]))
+        # save to a temp directory first (self-cleaning)
+        with tempfile.TemporaryDirectory() as tempdir:
+            tempdir_path = Path(tempdir)
+            temp_model_file = tempdir_path / MODEL_FILE
+            temp_data_file = tempdir_path / DATA_FILE
 
-        words = {}
-        for l in x_tokens_set:
-            words[l] = None
+            self.logger.info("Extracting entities...")
+            ent_matcher = EntityMatcher(spacy=self.spacy_wrapper)
+            entities = [ent_matcher.extract_entities(s) for s in x]
+            ent_matcher.save_data(temp_data_file, entities, y)
 
-        try:
-            vecs = await self.get_vectors(list(words.keys()))
-        except aiohttp.client_exceptions.ClientConnectorError as exc:
-            self.logger.error(
-                "Could not receive response from w2v service - {}".format(exc))
-            return ait.AiTrainingState.ai_error, None
+            self.logger.info("Entities saved to {}, tokenizing...".format(temp_data_file))
+            x_tokens = [self.spacy_wrapper.tokenizeSpacy(s) for s in x]
+            self.logger.info("tokens: {}".format([(xx, toks) for xx, toks in zip(x, x_tokens)]))
+            x_tokens_set = list(set([w for l in x_tokens for w in l]))
 
-        cls = EmbeddingComparison(w2v=vecs)
-        self.logger.info("Fitting...")
-        cls.fit(x_tokens, y)
-        saved_model_file = cls.save_model(model_file)
-        self.logger.info("Saved model to {}".format(saved_model_file))
+            words = {}
+            for l in x_tokens_set:
+                words[l] = None
+
+            try:
+                vecs = await self.get_vectors(list(words.keys()))
+            except aiohttp.client_exceptions.ClientConnectorError as exc:
+                self.logger.error(
+                    "Could not receive response from w2v service - {}".format(exc))
+                return ait.AiTrainingState.ai_error, None
+
+            cls = EmbeddingComparison(w2v=vecs)
+            self.logger.info("Fitting...")
+            cls.fit(x_tokens, y)
+            cls.save_model(temp_model_file)
+            self.logger.info("Saved model to {}".format(temp_model_file))
+
+            self.logger.info("Moving training files to {}".format(msg.ai_path))
+            model_file = msg.ai_path / MODEL_FILE
+            data_file = msg.ai_path / DATA_FILE
+            shutil.move(str(temp_model_file), str(model_file))
+            shutil.move(str(temp_data_file), str(data_file))
 
         now = datetime.datetime.now()
         hash_value = now.strftime("%y%m%d.%H%M%S")
         training_data_hash = hash_value
         result = (ait.AiTrainingState.ai_training_complete, training_data_hash)
         return result
-
-    def grouper(self, iterable, n, fillvalue=None):
-        args = [iter(iterable)] * n
-        return itertools.zip_longest(*args, fillvalue=fillvalue)
-
-    def to_utf8(self, string):
-        if type(string) == bytes:
-            return string.decode('utf-8', 'ignore')
-        else:
-            return string
-
-    def load_train_data(self, file_name=None):
-        self.logger.info("loading data from {}".format(file_name))
-        nLines = 3
-        y = []
-        X = []
-        isQuestion = True
-        with open(file_name, 'r') as f:
-            for lines in self.grouper(f, nLines, ''):
-                for line in lines:
-                    line = line.strip()
-                    if line == '\n' or len(line) == 0:
-                        continue
-                    elif not isQuestion:
-                        y.append(self.to_utf8(line))
-                        isQuestion = True
-                    else:
-                        X.append(self.to_utf8(line))
-                        isQuestion = False
-
-            # check if we have more questions than answers
-            if len(X) > len (y):
-                # remove last question
-                self.logger.warn("Last question removed as it didn't have a corresponding answer.")
-                X = X[:-1]
-        return X, y

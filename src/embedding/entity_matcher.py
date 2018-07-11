@@ -1,8 +1,13 @@
 import dill
 import logging
+from pathlib import Path
 
 
-class EntityMatcher(object):
+class EntityMatcherException(Exception):
+    pass
+
+
+class EntityMatcher:
 
     def __init__(self, spacy):
         self.train_labels = None
@@ -22,13 +27,15 @@ class EntityMatcher(object):
                 matched_label = self.train_labels[i]
         return matched_label
 
-    def save_data(self, file_path, ents, train_labels):
-        assert isinstance(ents, list), 'data to save must be list'
-        with open(file_path, 'wb') as f:
+    def save_data(self, file_path: Path, ents, train_labels):
+        if not isinstance(ents, list):
+            self.logger.error('data to save must be list')
+            raise EntityMatcherException('data to save must be list')
+        with file_path.open('wb') as f:
             dill.dump([ents, train_labels], f)
 
-    def load_data(self, file_path):
-        with open(file_path, 'rb') as f:
+    def load_data(self, file_path: Path):
+        with file_path.open('rb') as f:
             d = dill.load(f)
         ents = d[0]
         self.train_labels = d[1]

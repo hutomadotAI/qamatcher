@@ -1,6 +1,7 @@
 """SVCLASSIFIER chat worker processes"""
 
 import logging
+from pathlib import Path
 
 import ai_training.chat_process as ait_c
 from spacy_wrapper import SpacyWrapper
@@ -24,6 +25,7 @@ def _get_logger():
 class Word2VecFailureError(Exception):
     """Failure in Word2Vec"""
     pass
+
 
 class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
 
@@ -52,7 +54,6 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         self.logger.info("Started chat process for AI %s" % msg.ai_id)
         self.setup_chat_session()
 
-
     async def chat_request(self, msg: ait_c.ChatRequestMessage):
         """Handle a chat request"""
         if msg.update_state:
@@ -69,8 +70,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
             vecs = await self.w2v_client.get_vectors_for_words(unk_tokens)
         except aiohttp.client_exceptions.ClientConnectorError as exc:
             self.logger.error(
-                "Could not receive response from w2v service - {}".format(
-                    exc))
+                "Could not receive response from w2v service - {}".format(exc))
             raise Word2VecFailureError()
 
         self.cls.update_w2v(vecs)
@@ -81,16 +81,16 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
             self.logger.info("matched_entities: {}".format(matched_answer))
             self.logger.info("train: {} test: {}".format(self.train_entities, msg.question))
             if matched_answer:
-                self.logger.info("substituting {} for entity match {}".format(yPred, matched_answer))
+                self.logger.info("substituting {} for entity match {}".format(
+                    yPred, matched_answer))
                 yPred = [matched_answer]
                 yProbs = [ENTITY_MATCH_PROBA]
         resp = ait_c.ChatResponseMessage(msg, yPred[0], float(yProbs[0]))
         return resp
 
-
     def setup_chat_session(self):
         self.logger.info("Reloading model for AI %s" % self.ai_id)
         self.cls = EmbeddingComparison()
-        self.cls.load_model(self.ai_path + "/" + MODEL_FILE)
-        self.train_entities = self.entity_matcher.load_data(DATA_FILE)
-
+        ai_path = Path(self.ai_path)
+        self.cls.load_model(ai_path / MODEL_FILE)
+        self.train_entities = self.entity_matcher.load_data(ai_path / DATA_FILE)
