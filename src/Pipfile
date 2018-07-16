@@ -10,10 +10,8 @@ name = "hu_pypi"
 
 [packages]
 dill = {version="*", index="pypi"}
-nltk = {version="*", index="pypi"}
 numpy = {version="*", index="pypi"}
 scipy = {version="*", index="pypi"}
-spacy = {version="*", index="pypi"}
 sklearn = {version="*", index="pypi"}
 pyyaml = {version="*", index="pypi"}
 matplotlib = {version="*", index="pypi"}
@@ -29,6 +27,7 @@ pytest = {version="*", index="pypi"}
 pytest-aiohttp = {version="*", index="pypi"}
 pytest-cov = {version="*", index="pypi"}
 pytest-timeout = {version="*", index="pypi"}
+pytest-mock = {version="*", index="pypi"}
 flake8 = {version="*", index="pypi"}
 yapf = {version="*", index="pypi"}
 hu_build = {version="*", index="hu_pypi"}

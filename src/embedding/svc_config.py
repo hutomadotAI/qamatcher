@@ -8,6 +8,9 @@ class SvcConfig(object):
     def __init__(self):
         self._w2v_server_url = os.environ.get('W2V_SERVER_URL',
                                               'http://ai-word2vec:9090')
+        self._er_server_url = os.environ.get('ER_SERVER_URL',
+                                             'http://api-entity:9095')
+
         self._server_port = os.environ.get('EMB_SERVER_PORT', '9090')
 
     @staticmethod
@@ -19,6 +22,10 @@ class SvcConfig(object):
     @property
     def w2v_server_url(self):
         return self._w2v_server_url
+
+    @property
+    def er_server_url(self):
+        return self._er_server_url
 
     @property
     def server_port(self):

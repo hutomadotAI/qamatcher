@@ -10,13 +10,11 @@ import aiohttp
 import ai_training as ait
 import ai_training.training_process as aitp
 
+from embedding.text_classifier_class import EmbeddingComparison
 
-from text_classifier_class import EmbeddingComparison
-from entity_matcher import EntityMatcher
-from spacy_wrapper import SpacyWrapper
-
-from word2vec_client import Word2VecClient
-from svc_config import SvcConfig
+from embedding.word2vec_client import Word2VecClient
+from embedding.entity_wrapper import EntityWrapper
+from embedding.svc_config import SvcConfig
 
 MODEL_FILE = "model.pkl"
 DATA_FILE = "data.pkl"
@@ -35,13 +33,18 @@ class TrainEmbedMessage(aitp.TrainingMessage):
 
 
 class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
-    def __init__(self, pool, asyncio_loop):
+    def __init__(self, pool, asyncio_loop, aiohttp_client_session=None):
         super().__init__(pool, asyncio_loop)
         self.callback_object = None
         self.logger = _get_logger()
+        if aiohttp_client_session is None:
+            aiohttp_client_session = aiohttp.ClientSession()
+
+        self.aiohttp_client = aiohttp_client_session
+        config = SvcConfig.get_instance()
         self.w2v_client = Word2VecClient(
-            SvcConfig.get_instance().w2v_server_url)
-        self.spacy_wrapper = SpacyWrapper()
+            config.w2v_server_url, self.aiohttp_client)
+        self.entity_wrapper = EntityWrapper(config.er_server_url, self.aiohttp_client)
 
     async def get_vectors(self, questions):
         word_dict = {}
@@ -54,10 +57,12 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
     async def train(self, msg, topic: ait.Topic, callback_object):
 
         training_file_path = msg.ai_path / ait.AI_TRAINING_STANDARD_FILE_NAME
-        self.logger.info("Start training using file {}".format(training_file_path))
+        self.logger.info(
+            "Start training using file {}".format(training_file_path))
         root_topic = ait.file_load_training_data_v1(training_file_path)
 
-        q_and_a = [(entry.question, entry.answer) for entry in root_topic.entries]
+        q_and_a = [(entry.question, entry.answer)
+                   for entry in root_topic.entries]
         x, y = zip(*q_and_a)
 
         # save to a temp directory first (self-cleaning)
@@ -67,25 +72,21 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
             temp_data_file = tempdir_path / DATA_FILE
 
             self.logger.info("Extracting entities...")
-            ent_matcher = EntityMatcher(spacy=self.spacy_wrapper)
-            entities = [ent_matcher.extract_entities(s) for s in x]
-            ent_matcher.save_data(temp_data_file, entities, y)
+            entities = [await self.entity_wrapper.extract_entities(s) for s in x]
+            self.entity_wrapper.save_data(temp_data_file, entities, y)
 
-            self.logger.info("Entities saved to {}, tokenizing...".format(temp_data_file))
-            x_tokens = [self.spacy_wrapper.tokenizeSpacy(s) for s in x]
-            self.logger.info("tokens: {}".format([(xx, toks) for xx, toks in zip(x, x_tokens)]))
+            self.logger.info(
+                "Entities saved to {}, tokenizing...".format(temp_data_file))
+            x_tokens = [await self.entity_wrapper.tokenize(s) for s in x]
+            self.logger.info("tokens: {}".format(
+                [(xx, toks) for xx, toks in zip(x, x_tokens)]))
             x_tokens_set = list(set([w for l in x_tokens for w in l]))
 
             words = {}
             for l in x_tokens_set:
                 words[l] = None
 
-            try:
-                vecs = await self.get_vectors(list(words.keys()))
-            except aiohttp.client_exceptions.ClientConnectorError as exc:
-                self.logger.error(
-                    "Could not receive response from w2v service - {}".format(exc))
-                return ait.AiTrainingState.ai_error, None
+            vecs = await self.get_vectors(list(words.keys()))
 
             cls = EmbeddingComparison(w2v=vecs)
             self.logger.info("Fitting...")

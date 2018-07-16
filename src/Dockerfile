@@ -20,12 +20,6 @@ COPY Pipfile* setup.py /src/
 WORKDIR /src
 RUN pipenv install --system
 
-COPY initialize_model_data.py /src/
-RUN python initialize_model_data.py
-
-# Copy the code
-COPY embedding/ /src/embedding/
-
 #---------------------------
 # switch to non root user
 # define user/group IDs as ARG
@@ -36,11 +30,12 @@ RUN adduser --system --uid $USERID --gid $GROUPID appuser
 
 RUN mkdir /ai && chown appuser:appuser /ai
 
+# Copy the code
+COPY embedding/ /src/embedding/
+
 USER appuser
 WORKDIR /home/appuser
 
-# Get the NLTK corpus data for appuser
-RUN python -m nltk.downloader stopwords brown
 
 ENV EMB_SERVER_PORT 9090
 

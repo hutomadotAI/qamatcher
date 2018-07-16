@@ -11,7 +11,7 @@ from sklearn.decomposition import PCA
 import logging
 import logging.config
 
-from investigate import tsne_plot
+# from embedding.investigate import tsne_plot
 
 
 def _get_logger():
@@ -32,7 +32,7 @@ which are weighted by their tf-idf weight.
 """
 
 
-class TfidfEmbeddingVectorizer(object):
+class TfidfEmbeddingVectorizer:
     def __init__(self, word2vec, dim, voc=None):
         self.word2vec = word2vec
         self.word2weight = None
@@ -67,7 +67,7 @@ class TfidfEmbeddingVectorizer(object):
         ])
 
 
-class EmbeddingComparison(object):
+class EmbeddingComparison:
     @property
     def logger(self):
         return self.__logger

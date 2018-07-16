@@ -1,6 +1,5 @@
 from sklearn.manifold import TSNE
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
@@ -14,6 +13,10 @@ def tsne_plot(word_emb_dict, filename=None):
     into the predit function of embedding to plot query question in
     relation to training set
     """
+
+    # can't be at file/import level as this fails pytest import
+    matplotlib.use('Agg')
+
     labels = []
     tokens = []
 
@@ -21,7 +24,12 @@ def tsne_plot(word_emb_dict, filename=None):
         tokens.append(emb)
         labels.append(word)
 
-    tsne_model = TSNE(perplexity=40, n_components=2, init='pca', n_iter=2500, random_state=23)
+    tsne_model = TSNE(
+        perplexity=40,
+        n_components=2,
+        init='pca',
+        n_iter=2500,
+        random_state=23)
     new_values = tsne_model.fit_transform(tokens)
 
     x = []
@@ -32,13 +40,14 @@ def tsne_plot(word_emb_dict, filename=None):
 
     f = plt.figure(figsize=(16, 16))
     for i in range(len(x)):
-        plt.scatter(x[i] ,y[i])
-        plt.annotate(labels[i],
-                     xy=(x[i], y[i]),
-                     xytext=(5, 2),
-                     textcoords='offset points',
-                     ha='right',
-                     va='bottom')
+        plt.scatter(x[i], y[i])
+        plt.annotate(
+            labels[i],
+            xy=(x[i], y[i]),
+            xytext=(5, 2),
+            textcoords='offset points',
+            ha='right',
+            va='bottom')
     plt.show()
 
     fout = filename if filename else "tsne_embedding.pdf"
