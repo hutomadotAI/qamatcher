@@ -14,8 +14,7 @@ class Word2VecClient():
     async def w2v_call(self, payload):
         try:
             async with self.client_session.post(
-                    self.service_url + '/words',
-                    json=payload) as resp:
+                    self.service_url + '/words', json=payload) as resp:
                 status = resp.status
                 if status != 200:
                     raise Word2VecError(
@@ -26,8 +25,8 @@ class Word2VecClient():
                 raise Word2VecError("Response was none")
 
             return response_json
-        except (aiohttp.client_exceptions.ClientConnectorError
-                | aiohttp.client_exceptions.ContentTypeError) as exc:
+        except (aiohttp.client_exceptions.ClientConnectorError,
+                aiohttp.client_exceptions.ContentTypeError) as exc:
             raise Word2VecError("aiohttp error", exc)
 
     async def get_vectors_for_words(self, words):
@@ -39,6 +38,5 @@ class Word2VecClient():
         words_dict = response['vectors']
         vectors_dict = {}
         for word, vecs in words_dict.items():
-            vectors_dict[word] = numpy.array(
-                vecs, dtype='float32')
+            vectors_dict[word] = numpy.array(vecs, dtype='float32')
         return vectors_dict
