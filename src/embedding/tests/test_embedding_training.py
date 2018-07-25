@@ -5,6 +5,7 @@ import embedding.training_process
 import numpy
 import tempfile
 from pathlib import Path
+import unittest
 
 import ai_training as ait
 
@@ -119,3 +120,33 @@ hihi"""
         msg = ait.training_process.TrainingMessage(ai_path, DUMMY_AIID, 0)
         topic = None
         await mocked_train.train(msg, topic, None)
+
+class MockCallback:
+    pass
+
+async def dummy_async():
+    pass
+
+async def test_train_success_with_callback(mocked_train, mocker):
+    DUMMY_AIID = "123456"
+    DUMMY_TRAINING_DATA = """
+hi
+hihi"""
+    # mock out the maths/save functions so we can UT train()
+    mocker.patch("embedding.text_classifier_class.EmbeddingComparison.fit")
+    mocker.patch("embedding.text_classifier_class.EmbeddingComparison.save_model")
+    mocker.patch("shutil.move")
+    callback = MockCallback()
+    mocker.patch.object(callback, "wait_to_save", create=True, new=dummy_async)
+    mocker.patch.object(callback, "report_progress", create=True)
+    mocker.patch.object(callback, "check_for_cancel", create=True)
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        ai_path = Path(tempdir)
+        train_file = ai_path / ait.AI_TRAINING_STANDARD_FILE_NAME
+        with train_file.open("w") as file_handle:
+            file_handle.write(DUMMY_TRAINING_DATA)
+        
+        msg = ait.training_process.TrainingMessage(ai_path, DUMMY_AIID, 0)
+        topic = None
+        await mocked_train.train(msg, topic, callback)
