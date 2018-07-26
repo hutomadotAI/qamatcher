@@ -44,8 +44,29 @@ async def mocked_train(mocker, loop):
         training.entity_wrapper,
         "get_from_er_server",
         new=get_from_er_server)
-    training.entity_wrapper.train_entities = [["Reading", "today"],
-                                              ["Paris", "Fred", "Bloggs"]]
+    training.entity_wrapper.train_entities = [
+        [{
+            'category': 'sys.places',
+            'value': 'reading',
+            'start': 0,
+            'end': 7
+        }, {
+            'category': 'sys.date',
+            'value': 'today',
+            'start': 10,
+            'end': 17
+        }],
+        [{
+            'category': 'sys.places',
+            'value': 'paris',
+            'start': 0,
+            'end': 5
+        }, {
+            'category': 'sys.person',
+            'value': 'fred bloggs',
+            'start': 8,
+            'end': 18
+        }]]
     training.entity_wrapper.train_labels = ["You said Reading today",
                                             "You said Paris Fred Bloggs"]
     
@@ -69,8 +90,8 @@ async def test_er_entities(mocked_train):
     question = "this is a dummy question that will be mocked out"
     entities = await mocked_train.entity_wrapper.extract_entities(question)
     assert len(entities) == 2
-    assert entities[0] == 'reading'
-    assert entities[1] == 'today'
+    assert entities[0]['value'] == 'reading'
+    assert entities[1]['value'] == 'today'
 
 
 async def test_er_tokenize(mocked_train):
@@ -100,6 +121,7 @@ async def test_er_match_entities_2(mocked_train):
     matched_label = mocked_train.entity_wrapper.match_entities(
         question)
     assert matched_label == "You said Paris Fred Bloggs"
+
 
 async def test_train_success(mocked_train, mocker):
     DUMMY_AIID = "123456"
