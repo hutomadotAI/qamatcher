@@ -85,21 +85,23 @@ async def test_er_match_entities_none(mocked_train):
     question = "this question has no matching entities"
     matched_label = mocked_train.entity_wrapper.match_entities(
         question)
-    assert matched_label is None
+    assert len(matched_label) == 0
 
 
 async def test_er_match_entities_1(mocked_train):
     question = "this question matches Reading"
     matched_label = mocked_train.entity_wrapper.match_entities(
         question)
-    assert matched_label == "You said Reading today"
+    assert len(matched_label) == 1
+    assert matched_label[0][1] == "You said Reading today"
 
 
 async def test_er_match_entities_2(mocked_train):
     question = "this question matches Bloggs Fred"
     matched_label = mocked_train.entity_wrapper.match_entities(
         question)
-    assert matched_label == "You said Paris Fred Bloggs"
+    assert len(matched_label) == 1
+    assert matched_label[0][1] == "You said Paris Fred Bloggs"
 
 async def test_train_success(mocked_train, mocker):
     DUMMY_AIID = "123456"
