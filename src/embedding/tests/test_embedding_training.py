@@ -47,7 +47,7 @@ async def mocked_train(mocker, loop):
     training.entity_wrapper.train_entities = [
         [{
             'category': 'sys.places',
-            'value': 'London',
+            'value': 'london',
             'start': 0,
             'end': 6
         }, {
