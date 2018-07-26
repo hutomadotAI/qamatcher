@@ -57,6 +57,9 @@ class EntityWrapper:
             num_matches = sum(
                 [(e in test_q or e.lower() in test_q) for e in tr_ents])
             if num_matches > max_matches:
+                max_matches = num_matches
+                matched_labels = [(i, self.train_labels[i])]
+            if num_matches == max_matches:
                 matched_labels.append((i, self.train_labels[i]))
         return matched_labels
 
