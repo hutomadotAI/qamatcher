@@ -19,7 +19,7 @@ async def get_from_er_server(relative_url, params=None):
             'category': 'sys.places',
             'value': 'London',
             'start': 0,
-            'end': 7
+            'end': 6
         }, {
             'category': 'sys.date',
             'value': 'today',
@@ -49,7 +49,7 @@ async def mocked_train(mocker, loop):
             'category': 'sys.places',
             'value': 'London',
             'start': 0,
-            'end': 7
+            'end': 6
         }, {
             'category': 'sys.date',
             'value': 'today',
@@ -113,6 +113,7 @@ async def test_er_match_entities_1(mocked_train):
     question = "this question matches London"
     matched_label = mocked_train.entity_wrapper.match_entities(
         question)
+    assert len(matched_label) == 1
     assert matched_label[0][1] == "You said London today"
 
 
@@ -120,7 +121,9 @@ async def test_er_match_entities_2(mocked_train):
     question = "this question matches Bloggs Fred"
     matched_label = mocked_train.entity_wrapper.match_entities(
         question)
+    assert len(matched_label) == 1
     assert matched_label[0][1] == "You said Paris Fred Bloggs"
+
 
 async def test_train_success(mocked_train, mocker):
     DUMMY_AIID = "123456"
@@ -142,11 +145,14 @@ hihi"""
         topic = None
         await mocked_train.train(msg, topic, None)
 
+
 class MockCallback:
     pass
 
+
 async def dummy_async():
     pass
+
 
 async def test_train_success_with_callback(mocked_train, mocker):
     DUMMY_AIID = "123456"
