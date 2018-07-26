@@ -52,13 +52,13 @@ class EntityWrapper:
 
     def match_entities(self, test_q):
         max_matches = 0
-        matched_label = None
+        matched_labels = []
         for i, tr_ents in enumerate(self.train_entities):
             num_matches = sum(
                 [(e in test_q or e.lower() in test_q) for e in tr_ents])
             if num_matches > max_matches:
-                matched_label = self.train_labels[i]
-        return matched_label
+                matched_labels.append((i, self.train_labels[i]))
+        return matched_labels
 
     def save_data(self, file_path: Path, ents, train_labels):
         if not isinstance(ents, list):

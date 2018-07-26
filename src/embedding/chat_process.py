@@ -60,15 +60,20 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
 
         self.cls.update_w2v(vecs)
         yPred, yProbs = self.cls.predict(x_tokens_testset)
-        if yProbs[0] < THRESHOLD:
-            matched_answer = self.entity_wrapper.match_entities(
+        if yProbs[0] < THRESHOLD or len(x_tokens_testset) < 3:
+            matched_answers = self.entity_wrapper.match_entities(
                 msg.question)
-            self.logger.info("matched_entities: {}".format(matched_answer))
-            if matched_answer:
-                self.logger.info("substituting {} for entity match {}".format(
-                    yPred, matched_answer))
-                yPred = [matched_answer]
-                yProbs = [ENTITY_MATCH_PROBA]
+            self.logger.info("matched_entities: {}".format(matched_answers))
+            if matched_answers:
+                if len(matched_answers) > 1:
+                    train_idx = [e[0] for e in matched_answers]
+                    yPred, yProbs = self.cls.predict(x_tokens_testset, subset_idx=train_idx)
+                    self.logger.info("multiple entity matches {}; pick {}".format(matched_answers, yPred))
+                else:
+                    self.logger.info("substituting {} for entity match {}".format(
+                        yPred, matched_answers))
+                    yPred = [matched_answers[0][1]]
+                    yProbs = [ENTITY_MATCH_PROBA]
         resp = ait_c.ChatResponseMessage(msg, yPred[0], float(yProbs[0]))
         return resp
 

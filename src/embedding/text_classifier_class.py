@@ -110,21 +110,26 @@ class EmbeddingComparison:
         self.X = X
         self.classes = list(set(y))
 
-    def predict(self, X, scale_probas=False):
+    def predict(self, X, scale_probas=False, subset_idx=None):
+        if subset_idx:
+            train_x = self.X_tfidf[subset_idx]
+            train_y = self.y[subset_idx]
+        else:
+            train_x = self.X_tfidf
+            train_y = self.y
         target_tfidf = self.vectorizer.transform(X)
         target_tfidf = target_tfidf - self.pca.components_[0]
-
         # compute cosine similarity
-        cossim = np.dot(target_tfidf, self.X_tfidf.T) / (
-            np.outer(np.linalg.norm(target_tfidf, axis=1), np.linalg.norm(self.X_tfidf, axis=1)))
+        cossim = np.dot(target_tfidf, train_x.T) / (
+            np.outer(np.linalg.norm(target_tfidf, axis=1), np.linalg.norm(train_x, axis=1)))
         # self.logger.info("cossim: {}".format(cossim))
         cossim = np.where(cossim < 0., 0., cossim)
-
+        if subset_idx:
+            self.logger.info("cossims: {}".format(cossim))
         # most similar vector is the predicted class
         preds = np.argmax(cossim, 1)
-        preds = [self.y[i] for i in preds]
+        preds = [train_y[i] for i in preds]
         probs = self.downscale_probas(np.max(cossim, axis=1))
-
         return preds, list(probs)
 
     def save_model(self, file_path: Path):
