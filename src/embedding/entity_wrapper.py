@@ -59,7 +59,7 @@ class EntityWrapper:
             if num_matches > max_matches:
                 max_matches = num_matches
                 matched_labels = [(i, self.train_labels[i])]
-            if num_matches == max_matches:
+            if num_matches == max_matches and max_matches > 0:
                 matched_labels.append((i, self.train_labels[i]))
         return matched_labels
 
