@@ -68,7 +68,8 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
                 if len(matched_answers) > 1:
                     train_idx = [e[0] for e in matched_answers]
                     yPred, yProbs = self.cls.predict(x_tokens_testset, subset_idx=train_idx)
-                    self.logger.info("multiple entity matches {}; pick {}".format(matched_answers, yPred))
+                    self.logger.info("multiple entity matches {}; pick {}".format(
+                        matched_answers, yPred))
                 else:
                     self.logger.info("substituting {} for entity match {}".format(
                         yPred, matched_answers))
