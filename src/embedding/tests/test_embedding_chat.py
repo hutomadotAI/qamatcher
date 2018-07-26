@@ -14,7 +14,7 @@ async def get_from_er_server(relative_url, params=None):
     if relative_url == "ner":
         return [{
             'category': 'sys.places',
-            'value': 'Reading',
+            'value': 'London',
             'start': 0,
             'end': 7
         }, {
@@ -41,9 +41,9 @@ async def mocked_chat(mocker, loop):
         "get_from_er_server",
         new=get_from_er_server)
 
-    chat.entity_wrapper.train_entities = [["Reading", "today"],
+    chat.entity_wrapper.train_entities = [["London", "today"],
                                               ["Paris", "Fred", "Bloggs"]]
-    chat.entity_wrapper.train_labels = ["You said Reading today",
+    chat.entity_wrapper.train_labels = ["You said London today",
                                             "You said Paris Fred Bloggs"]
     
     # mock out the load methods
@@ -104,9 +104,9 @@ async def test_chat_request_entity_no_match(mocker, mocked_chat):
         ["the answer"], [score])
     mocker.spy(mocked_chat.entity_wrapper, "match_entities")
 
-    msg = ait_c.ChatRequestMessage("This question has entities Reading today in it", None, None, update_state=True)
+    msg = ait_c.ChatRequestMessage("This question has entities London today in it", None, None, update_state=True)
     response = await mocked_chat.chat_request(msg)
-    assert response.answer == "You said Reading today"
+    assert response.answer == "You said London today"
     assert response.score == embedding.chat_process.ENTITY_MATCH_PROBA
     assert response.topic_out is None
     assert response.history is None
