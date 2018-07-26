@@ -41,29 +41,8 @@ async def mocked_chat(mocker, loop):
         "get_from_er_server",
         new=get_from_er_server)
 
-    chat.entity_wrapper.train_entities = [
-        [{
-            'category': 'sys.places',
-            'value': 'reading',
-            'start': 0,
-            'end': 7
-        }, {
-            'category': 'sys.date',
-            'value': 'today',
-            'start': 10,
-            'end': 17
-        }],
-        [{
-            'category': 'sys.places',
-            'value': 'paris',
-            'start': 0,
-            'end': 5
-        }, {
-            'category': 'sys.person',
-            'value': 'fred bloggs',
-            'start': 8,
-            'end': 18
-        }]]
+    chat.entity_wrapper.train_entities = [["Reading", "today"],
+                                              ["Paris", "Fred", "Bloggs"]]
     chat.entity_wrapper.train_labels = ["You said Reading today",
                                             "You said Paris Fred Bloggs"]
     
