@@ -17,7 +17,7 @@ async def get_from_er_server(relative_url, params=None):
     if relative_url == "ner":
         return [{
             'category': 'sys.places',
-            'value': 'Reading',
+            'value': 'London',
             'start': 0,
             'end': 7
         }, {
@@ -47,7 +47,7 @@ async def mocked_train(mocker, loop):
     training.entity_wrapper.train_entities = [
         [{
             'category': 'sys.places',
-            'value': 'reading',
+            'value': 'London',
             'start': 0,
             'end': 7
         }, {
@@ -67,7 +67,7 @@ async def mocked_train(mocker, loop):
             'start': 8,
             'end': 18
         }]]
-    training.entity_wrapper.train_labels = ["You said Reading today",
+    training.entity_wrapper.train_labels = ["You said London today",
                                             "You said Paris Fred Bloggs"]
     
     return training
@@ -90,7 +90,7 @@ async def test_er_entities(mocked_train):
     question = "this is a dummy question that will be mocked out"
     entities = await mocked_train.entity_wrapper.extract_entities(question)
     assert len(entities) == 2
-    assert entities[0]['value'] == 'Reading'
+    assert entities[0]['value'] == 'London'
     assert entities[1]['value'] == 'today'
 
 
@@ -110,10 +110,10 @@ async def test_er_match_entities_none(mocked_train):
 
 
 async def test_er_match_entities_1(mocked_train):
-    question = "this question matches Reading"
+    question = "this question matches London"
     matched_label = mocked_train.entity_wrapper.match_entities(
         question)
-    assert matched_label[0][1] == "You said Reading today"
+    assert matched_label[0][1] == "You said London today"
 
 
 async def test_er_match_entities_2(mocked_train):
