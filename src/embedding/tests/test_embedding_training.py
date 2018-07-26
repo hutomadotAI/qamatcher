@@ -44,8 +44,29 @@ async def mocked_train(mocker, loop):
         training.entity_wrapper,
         "get_from_er_server",
         new=get_from_er_server)
-    training.entity_wrapper.train_entities = [["Reading", "today"],
-                                              ["Paris", "Fred", "Bloggs"]]
+    training.entity_wrapper.train_entities = [
+        [{
+            'category': 'sys.places',
+            'value': 'reading',
+            'start': 0,
+            'end': 7
+        }, {
+            'category': 'sys.date',
+            'value': 'today',
+            'start': 10,
+            'end': 17
+        }],
+        [{
+            'category': 'sys.places',
+            'value': 'paris',
+            'start': 0,
+            'end': 5
+        }, {
+            'category': 'sys.person',
+            'value': 'Fred Bloggs',
+            'start': 8,
+            'end': 18
+        }]]
     training.entity_wrapper.train_labels = ["You said Reading today",
                                             "You said Paris Fred Bloggs"]
     
