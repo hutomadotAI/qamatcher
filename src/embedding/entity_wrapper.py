@@ -42,7 +42,7 @@ class EntityWrapper:
         if not isinstance(entities, list):
             raise EntityWrapperException(
                 "Unexpected ER response - should be a list")
-        return [e for e in entities]
+        return entities
 
     async def tokenize(self, sample):
         tokens = await self.get_from_er_server("tokenize", {'q': sample})

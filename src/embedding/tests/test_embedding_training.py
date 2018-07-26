@@ -69,7 +69,7 @@ async def test_er_entities(mocked_train):
     question = "this is a dummy question that will be mocked out"
     entities = await mocked_train.entity_wrapper.extract_entities(question)
     assert len(entities) == 2
-    assert entities[0] == 'Reading'
+    assert entities[0] == 'reading'
     assert entities[1] == 'today'
 
 
