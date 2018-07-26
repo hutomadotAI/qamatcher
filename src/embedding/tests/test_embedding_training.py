@@ -63,7 +63,7 @@ async def mocked_train(mocker, loop):
             'end': 5
         }, {
             'category': 'sys.person',
-            'value': 'Fred Bloggs',
+            'value': 'fred bloggs',
             'start': 8,
             'end': 18
         }]]
@@ -90,8 +90,8 @@ async def test_er_entities(mocked_train):
     question = "this is a dummy question that will be mocked out"
     entities = await mocked_train.entity_wrapper.extract_entities(question)
     assert len(entities) == 2
-    assert entities[0] == 'reading'
-    assert entities[1] == 'today'
+    assert entities[0]['value'] == 'reading'
+    assert entities[1]['value'] == 'today'
 
 
 async def test_er_tokenize(mocked_train):
