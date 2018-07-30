@@ -45,6 +45,7 @@ async def mocked_train(mocker, loop):
         training.entity_wrapper,
         "get_from_er_server",
         new=get_from_er_server)
+
     training.entity_wrapper.train_entities = [
         [{
             'category': 'sys.places',
@@ -68,6 +69,7 @@ async def mocked_train(mocker, loop):
             'start': 8,
             'end': 18
         }]]
+
     training.entity_wrapper.train_labels = ["You said London today",
                                             "You said Paris Fred Bloggs"]
     
@@ -124,7 +126,6 @@ async def test_er_match_entities_2(mocked_train):
         question)
     assert len(matched_label) == 1
     assert matched_label[0][1] == "You said Paris Fred Bloggs"
-
 
 
 async def test_train_success(mocked_train, mocker):

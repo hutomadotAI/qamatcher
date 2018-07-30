@@ -78,6 +78,9 @@ class EntityWrapper:
                     if e not in ['the'] and e in test_match:
                         num_matches += 1
             if num_matches > max_matches:
+                max_matches = num_matches
+                matched_labels = [(i, self.train_labels[i])]
+            elif num_matches == max_matches and max_matches > 0:
                 matched_labels.append((i, self.train_labels[i]))
         return matched_labels
 
