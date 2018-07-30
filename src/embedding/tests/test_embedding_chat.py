@@ -128,7 +128,7 @@ async def test_chat_request_entity_no_match2(mocker, mocked_chat):
 
     msg = ait_c.ChatRequestMessage("This question has entities London today in it", None, None, update_state=True)
     response = await mocked_chat.chat_request(msg)
-    assert response.answer[0][1] == "You said London today"
+    assert response.answer == "You said London today"
     assert response.score == embedding.chat_process.ENTITY_MATCH_PROBA
     assert response.topic_out is None
     assert response.history is None
