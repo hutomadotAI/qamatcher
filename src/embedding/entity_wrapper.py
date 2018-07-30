@@ -42,6 +42,10 @@ class EntityWrapper:
         if not isinstance(entities, list):
             raise EntityWrapperException(
                 "Unexpected ER response - should be a list")
+        for e in entities:
+            if "'s" in e['value']:
+                e['value'] = e['value'].replace("'s", "")
+            e['value'] = e['value'].lower()
         return entities
 
     async def tokenize(self, sample):

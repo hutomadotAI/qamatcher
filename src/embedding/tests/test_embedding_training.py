@@ -9,6 +9,7 @@ import unittest
 
 import ai_training as ait
 
+
 async def mock_w2v_call(payload):
     return {'vectors': {"word1": [1.1, 1.2, 1.3], "word2": [0.1, 0.2, 0.3]}}
 
@@ -90,7 +91,7 @@ async def test_er_entities(mocked_train):
     question = "this is a dummy question that will be mocked out"
     entities = await mocked_train.entity_wrapper.extract_entities(question)
     assert len(entities) == 2
-    assert entities[0]['value'] == 'London'
+    assert entities[0]['value'] == 'london'
     assert entities[1]['value'] == 'today'
 
 
@@ -123,6 +124,7 @@ async def test_er_match_entities_2(mocked_train):
         question)
     assert len(matched_label) == 1
     assert matched_label[0][1] == "You said Paris Fred Bloggs"
+
 
 
 async def test_train_success(mocked_train, mocker):

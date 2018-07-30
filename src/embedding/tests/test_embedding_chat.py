@@ -16,7 +16,7 @@ async def get_from_er_server(relative_url, params=None):
             'category': 'sys.places',
             'value': 'London',
             'start': 0,
-            'end': 7
+            'end': 6
         }, {
             'category': 'sys.date',
             'value': 'today',
@@ -101,7 +101,7 @@ async def test_chat_request_embedding_match(mocker, mocked_chat):
     assert response.score == score
     assert response.topic_out is None
     assert response.history is None
-    assert mocked_chat.entity_wrapper.match_entities.call_count == 0
+    assert mocked_chat.entity_wrapper.match_entities.call_count == 1
 
 async def test_chat_request_entity_no_match(mocker, mocked_chat):
     score = float(embedding.chat_process.THRESHOLD - 0.1)
