@@ -60,7 +60,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
 
         self.cls.update_w2v(vecs)
         yPred, yProbs = self.cls.predict(x_tokens_testset)
-        if yProbs[0] < THRESHOLD:
+        if yProbs[0] < THRESHOLD or len(x_tokens_testset) < 3:
             matched_answers = self.entity_wrapper.match_entities(
                 msg.question)
             self.logger.info("matched_entities: {}".format(matched_answers))

@@ -9,6 +9,7 @@ import unittest
 
 import ai_training as ait
 
+
 async def mock_w2v_call(payload):
     return {'vectors': {"word1": [1.1, 1.2, 1.3], "word2": [0.1, 0.2, 0.3]}}
 
@@ -19,7 +20,7 @@ async def get_from_er_server(relative_url, params=None):
             'category': 'sys.places',
             'value': 'London',
             'start': 0,
-            'end': 7
+            'end': 6
         }, {
             'category': 'sys.date',
             'value': 'today',
@@ -44,8 +45,31 @@ async def mocked_train(mocker, loop):
         training.entity_wrapper,
         "get_from_er_server",
         new=get_from_er_server)
-    training.entity_wrapper.train_entities = [["London", "today"],
-                                              ["Paris", "Fred", "Bloggs"]]
+
+    training.entity_wrapper.train_entities = [
+        [{
+            'category': 'sys.places',
+            'value': 'london',
+            'start': 0,
+            'end': 6
+        }, {
+            'category': 'sys.date',
+            'value': 'today',
+            'start': 10,
+            'end': 17
+        }],
+        [{
+            'category': 'sys.places',
+            'value': 'paris',
+            'start': 0,
+            'end': 5
+        }, {
+            'category': 'sys.person',
+            'value': 'fred bloggs',
+            'start': 8,
+            'end': 18
+        }]]
+
     training.entity_wrapper.train_labels = ["You said London today",
                                             "You said Paris Fred Bloggs"]
     
@@ -69,8 +93,8 @@ async def test_er_entities(mocked_train):
     question = "this is a dummy question that will be mocked out"
     entities = await mocked_train.entity_wrapper.extract_entities(question)
     assert len(entities) == 2
-    assert entities[0] == 'London'
-    assert entities[1] == 'today'
+    assert entities[0]['value'] == 'london'
+    assert entities[1]['value'] == 'today'
 
 
 async def test_er_tokenize(mocked_train):
@@ -103,6 +127,7 @@ async def test_er_match_entities_2(mocked_train):
     assert len(matched_label) == 1
     assert matched_label[0][1] == "You said Paris Fred Bloggs"
 
+
 async def test_train_success(mocked_train, mocker):
     DUMMY_AIID = "123456"
     DUMMY_TRAINING_DATA = """
@@ -123,11 +148,14 @@ hihi"""
         topic = None
         await mocked_train.train(msg, topic, None)
 
+
 class MockCallback:
     pass
 
+
 async def dummy_async():
     pass
+
 
 async def test_train_success_with_callback(mocked_train, mocker):
     DUMMY_AIID = "123456"
