@@ -69,7 +69,7 @@ async def test_er_entities(mocked_train):
     question = "this is a dummy question that will be mocked out"
     entities = await mocked_train.entity_wrapper.extract_entities(question)
     assert len(entities) == 2
-    assert entities[0] == 'London'
+    assert entities[0] == 'london'
     assert entities[1] == 'today'
 
 
@@ -100,6 +100,7 @@ async def test_er_match_entities_2(mocked_train):
     matched_label = mocked_train.entity_wrapper.match_entities(
         question)
     assert matched_label == "You said Paris Fred Bloggs"
+
 
 async def test_train_success(mocked_train, mocker):
     DUMMY_AIID = "123456"
