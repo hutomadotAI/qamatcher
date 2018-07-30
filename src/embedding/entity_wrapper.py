@@ -1,5 +1,6 @@
 import aiohttp
 import dill
+import string
 import logging
 from pathlib import Path
 
@@ -45,7 +46,7 @@ class EntityWrapper:
             if "'s" in e['value']:
                 e['value'] = e['value'].replace("'s", "")
             e['value'] = e['value'].lower()
-        return [e['value'] for e in entities]
+        return entities
 
     async def tokenize(self, sample):
         tokens = await self.get_from_er_server("tokenize", {'q': sample})
@@ -56,13 +57,29 @@ class EntityWrapper:
 
     def match_entities(self, test_q):
         max_matches = 0
-        matched_label = None
+        matched_labels = []
+        test_match = test_q.lower()
+        test_match = test_match.replace('"', '')
+        test_match = test_match.replace("'s", "")
+        test_match = test_match.replace("", "")
+        d = test_match.maketrans('', '', string.punctuation)
+        test_match = test_match.translate(d)
+        test_match = test_match.split()
+        self.logger.info("test_match: {}".format(test_match))
         for i, tr_ents in enumerate(self.train_entities):
-            num_matches = sum(
-                [(e in test_q or e.lower() in test_q) for e in tr_ents])
+            num_matches = 0
+            self.logger.info("train sample ents: {}".format(tr_ents))
+            for ent in tr_ents:
+                if ent['category'] == 'sys.person':
+                    tmp_ent = ent['value'].split()
+                else:
+                    tmp_ent = [ent['value']]
+                for e in tmp_ent:
+                    if e not in ['the'] and e in test_match:
+                        num_matches += 1
             if num_matches > max_matches:
-                matched_label = self.train_labels[i]
-        return matched_label
+                matched_labels.append((i, self.train_labels[i]))
+        return matched_labels
 
     def save_data(self, file_path: Path, ents, train_labels):
         if not isinstance(ents, list):

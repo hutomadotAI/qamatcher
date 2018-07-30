@@ -41,8 +41,29 @@ async def mocked_chat(mocker, loop):
         "get_from_er_server",
         new=get_from_er_server)
 
-    chat.entity_wrapper.train_entities = [["London", "today"],
-                                              ["Paris", "Fred", "Bloggs"]]
+    chat.entity_wrapper.train_entities = [
+        [{
+            'category': 'sys.places',
+            'value': 'London',
+            'start': 0,
+            'end': 7
+        }, {
+            'category': 'sys.date',
+            'value': 'today',
+            'start': 10,
+            'end': 17
+        }],
+        [{
+            'category': 'sys.places',
+            'value': 'paris',
+            'start': 0,
+            'end': 5
+        }, {
+            'category': 'sys.person',
+            'value': 'fred bloggs',
+            'start': 8,
+            'end': 18
+        }]]
     chat.entity_wrapper.train_labels = ["You said London today",
                                             "You said Paris Fred Bloggs"]
     
@@ -97,7 +118,7 @@ async def test_chat_request_entity_no_match(mocker, mocked_chat):
     assert response.history is None
     assert mocked_chat.entity_wrapper.match_entities.call_count == 1
 
-async def test_chat_request_entity_no_match(mocker, mocked_chat):
+async def test_chat_request_entity_no_match2(mocker, mocked_chat):
     score = float(embedding.chat_process.THRESHOLD - 0.1)
     mocker.patch("embedding.text_classifier_class.EmbeddingComparison.predict")
     embedding.text_classifier_class.EmbeddingComparison.predict.return_value = (
@@ -106,7 +127,7 @@ async def test_chat_request_entity_no_match(mocker, mocked_chat):
 
     msg = ait_c.ChatRequestMessage("This question has entities London today in it", None, None, update_state=True)
     response = await mocked_chat.chat_request(msg)
-    assert response.answer == "You said London today"
+    assert response.answer[0][1] == "You said London today"
     assert response.score == embedding.chat_process.ENTITY_MATCH_PROBA
     assert response.topic_out is None
     assert response.history is None
