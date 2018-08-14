@@ -15,9 +15,11 @@ from embedding.text_classifier_class import EmbeddingComparison
 from embedding.word2vec_client import Word2VecClient
 from embedding.entity_wrapper import EntityWrapper
 from embedding.svc_config import SvcConfig
+from embedding.string_match import StringMatch
 
 MODEL_FILE = "model.pkl"
 DATA_FILE = "data.pkl"
+TRAIN_FILE = "train.pkl"
 
 
 def _get_logger():
@@ -49,6 +51,7 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
                                          self.aiohttp_client)
         self.entity_wrapper = EntityWrapper(config.er_server_url,
                                             self.aiohttp_client)
+        self.string_match = StringMatch(self.entity_wrapper)
         self.last_update_sent = None
         self.callback = None
 
@@ -92,14 +95,19 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
             tempdir_path = Path(tempdir)
             temp_model_file = tempdir_path / MODEL_FILE
             temp_data_file = tempdir_path / DATA_FILE
+            temp_train_file = tempdir_path / TRAIN_FILE
+
+            self.string_match.save_train_data(q_and_a, temp_train_file)
 
             self.logger.info("Extracting entities...")
-            entities = []
-            for question in x:
-                entity = await self.entity_wrapper.extract_entities(question)
-                entities.append(entity)
+            q_entities, a_entities = [], []
+            for question, answer in q_and_a:
+                q_entity = await self.entity_wrapper.extract_entities(question)
+                a_entity = await self.entity_wrapper.extract_entities(answer)
+                q_entities.append(q_entity)
+                a_entities.append(a_entity)
                 self.report_progress(0.1)
-            self.entity_wrapper.save_data(temp_data_file, entities, y)
+            self.entity_wrapper.save_data(temp_data_file, q_entities, a_entities, y)
             self.report_progress(0.2)
 
             self.logger.info(
@@ -113,13 +121,19 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
                 self.report_progress(0.3)
 
             x_tokens_set = list(set([w for l in x_tokens for w in l]))
+
+            # find unknown words to word-embedding and get rid of them
+            unk_words = await self.w2v_client.get_unknown_words(x_tokens_set)
+            self.logger.info("unknown words: {}".format(unk_words))
+            x_tokens_set = [w for w in x_tokens_set if w not in unk_words]
+            x_tokens = [[w for w in s if w not in unk_words] for s in x_tokens]
+            if not x_tokens_set:
+                x_tokens_set = ['UNK']
+            x_tokens = [l if len(l) > 0 else ['UNK'] for l in x_tokens]
+
             self.report_progress(0.4)
 
-            words = {}
-            for l in x_tokens_set:
-                words[l] = None
-
-            vecs = await self.get_vectors(list(words.keys()))
+            vecs = await self.get_vectors(x_tokens_set)
             self.report_progress(0.6)
 
             cls = EmbeddingComparison(w2v=vecs)
@@ -134,8 +148,10 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
             self.logger.info("Moving training files to {}".format(msg.ai_path))
             model_file = msg.ai_path / MODEL_FILE
             data_file = msg.ai_path / DATA_FILE
+            train_file = msg.ai_path / TRAIN_FILE
             shutil.move(str(temp_model_file), str(model_file))
             shutil.move(str(temp_data_file), str(data_file))
+            shutil.move(str(temp_train_file), str(train_file))
 
         now = datetime.datetime.now()
         hash_value = now.strftime("%y%m%d.%H%M%S")

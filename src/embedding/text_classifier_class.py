@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+    # -*- coding: utf-8 -*-
 
 import dill
 import numpy as np
@@ -112,8 +112,9 @@ class EmbeddingComparison:
 
     def predict(self, X, scale_probas=False, subset_idx=None):
         if subset_idx:
-            train_x = self.X_tfidf[subset_idx]
-            train_y = self.y[subset_idx]
+            self.logger.info("X_tfidf: {} y: {}".format(self.X_tfidf.shape, self.y.shape))
+            train_x = self.X_tfidf[np.array(subset_idx), :]
+            train_y = self.y[np.array(subset_idx)]
         else:
             train_x = self.X_tfidf
             train_y = self.y
