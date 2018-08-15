@@ -35,7 +35,7 @@ class StringMatch:
                                                      sw_size=self.stopword_size)
             self.tok_train.append(tok)
 
-    async def get_string_match(self, q, subset_idx=None):
+    async def get_string_match(self, q, subset_idx=None, all_larger_zero=False):
         self.logger.info("searching for word matches")
         tok_train = self.tok_train if subset_idx is None else [self.tok_train[i] for i in subset_idx]
         train_data = self.train_data if subset_idx is None else [self.train_data[i] for i in subset_idx]
@@ -45,11 +45,22 @@ class StringMatch:
                                                    sw_size=self.stopword_size)
         self.logger.info("tok_train: {}".format(tok_train))
         self.logger.info("tok_q: {}".format(tok_q))
-        match_probas = [self.__jaccard_similarity(tok_q, t) if '@' not in ' '.join(t) else 0.0
-                        for t in tok_train]
+
+        # search for intent-like entities first
+        if "@" in q:
+            match_probas = [1.0 if "@" in t[0] else 0.0 for t in self.train_data]
+        # otherwise do string match
+        else:
+            match_probas = [self.__jaccard_similarity(tok_q, t) if '@' not in ' '.join(t) else 0.0
+                            for t in tok_train]
         self.logger.info("match_probas: {}".format(match_probas))
         max_proba = max(match_probas)
-        preds = [(idx[i], train_data[i][1]) for i, p in enumerate(match_probas) if p == max_proba]
+        if all_larger_zero:
+            cond = lambda a, b: a > 0.
+        else:
+            cond = lambda a, b: a == b
+        preds = [(idx[i], train_data[i][1]) for i, p in enumerate(match_probas) if cond(p, max_proba)]
+        self.logger.info("string_match: {} - {}".format(max_proba, preds))
         return max_proba, preds
 
     def __jaccard_similarity(self, list1, list2):

@@ -63,6 +63,10 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         ]
         self.logger.info("x_tokens_testset: {}".format(x_tokens_testset))
 
+        # get question entities
+        msg_entities = await self.entity_wrapper.extract_entities(msg.question)
+        self.logger.info("msg_entities: {}".format(msg_entities))
+
         # get string match
         max_proba, preds = await self.string_match.get_string_match(msg.question)
         if max_proba > STRING_PROBA_THRES:
@@ -70,7 +74,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
                 idxs, _ = zip(*preds)
                 self.logger.info("idxs: {}".format(idxs))
                 matched_answers = self.entity_wrapper.match_entities(
-                    msg.question, subset_idxs=idxs)
+                    msg.question, msg_entities, subset_idxs=idxs)
                 if len(matched_answers) == 1:
                     y_pred = [matched_answers[0][1]]
                     y_prob = [ENTITY_MATCH_PROBA]
@@ -87,7 +91,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         else:
             # get entity match
             matched_answers = self.entity_wrapper.match_entities(
-                msg.question)
+                msg.question, msg_entities)
             self.logger.info("matched_entities: {}".format(matched_answers))
             if matched_answers:
                 if len(matched_answers) == 1:
