@@ -13,7 +13,7 @@ class StringMatch:
         self.train_data = None
         self.tok_train = []
         self.entity_wrapper = entity_wrapper
-        self.stopword_size = 'large'
+        self.stopword_size = 'small'
         self.filter_entities = 'False'
 
     def load_train_data(self, file_path):

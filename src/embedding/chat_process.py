@@ -99,12 +99,6 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
                     y_prob = [ENTITY_MATCH_PROBA]
                 else:
                     train_idx = [e[0] for e in matched_answers]
-                    # preds = self.entity_wrapper.interrogative_word_match(msg.question, subset_idxs=train_idx)
-                    # self.logger.info("preds: {}".format(preds))
-                    # if len(preds) == 1:
-                    #     y_pred = [preds[0][1]]
-                    #     y_prob = [ENTITY_MATCH_PROBA]
-                    # else:
                     y_pred, y_prob = self.cls.predict(x_tokens_testset, subset_idx=train_idx)
                     self.logger.info("multiple entity matches {}; pick {}".format(
                         matched_answers, y_pred))

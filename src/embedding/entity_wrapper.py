@@ -82,7 +82,7 @@ class EntityWrapper:
         ents_q_a = [(i, self.train_entities_q[i], self.train_entities_a[i]) for i in sub_idxs]
 
         # search for interrogative words matching entitites
-        interrog_matches = [(i, ents_q, self.interrogative_match(test_match, ents_msg, ents_a))
+        interrog_matches = [(i, ents_q, self.interrogative_match(test_match, (ents_msg, ents_q, ents_a)))
                             for i, ents_q, ents_a in ents_q_a]
         _, _, cnt = zip(*interrog_matches)
         self.logger.info("interrog count: {}".format(cnt))
@@ -122,33 +122,36 @@ class EntityWrapper:
             self.logger.info("no entity matches")
             return []
 
-    def interrogative_match(self, test_match, ents_msg, ents_a):
+    def interrogative_match(self, test_match, ents):
         match = 0
-        match += int(self.check_who_questions(test_match, ents_msg, ents_a))
-        match += int(self.check_for_person(test_match, ents_msg, ents_a))
-        match += int(self.check_for_custom_entity(test_match, ents_msg, ents_a))
+        match += int(self.check_who_questions(test_match, ents))
+        match += int(self.check_for_person(test_match, ents))
+        match += int(self.check_for_custom_entity(test_match, ents))
         # elif 'what' in test_match:
         #     match = any([ent['category'] in ['sys.group', 'sys.organization'] for ent in train_ents])
         return match
 
-    def check_who_questions(self, test_match, ents_msg, ents_a):
+    def check_who_questions(self, test_match, ents):
+        ents_msg, ents_q, ents_a = ents
         match = False
-        if 'who' in test_match:  # and not any([e['category'] == 'sys.person' for e in ents_msg]):
+        if 'who' in test_match and not any([e['category'] == 'sys.person' for e in ents_msg]):
             match = any([ent_a['category'] == 'sys.person' for ent_a in ents_a])
         return match
 
-    def check_for_person(self, test_match, ents_msg, ents_a):
+    def check_for_person(self, test_match, ents):
+        ents_msg, ents_q, ents_a = ents
         person = [e['value'].lower().split() for e in ents_msg if e['category'] == 'sys.person']
         person = [e for p in person for e in p]
         self.logger.info("person: {}".format(person))
         self.logger.info("ents_a: {}".format([e['value'].lower() for e in ents_a]))
         self.logger.info("check: {}".format([e['value'].lower() in p for e in ents_a for p in person]))
         if len(person) > 0:
-            return any([p in e['value'].lower() for e in ents_a for p in person])
+            return any([p in e['value'].lower() for e in ents_q for p in person])
         else:
             return False
 
-    def check_for_custom_entity(self, test_match, ents_msg, ents_a):
+    def check_for_custom_entity(self, test_match, ents):
+        ents_msg, ents_q, ents_a = ents
         cust_ents = [e['value'] for e in ents_msg if e['category'].startswith("@")]
         if len(cust_ents) > 0:
             return any([e['value'] in cust_ents for e in ents_a])
