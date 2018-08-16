@@ -68,57 +68,55 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         self.logger.info("msg_entities: {}".format(msg_entities))
 
         # get string match
-        max_proba, preds = await self.string_match.get_string_match(msg.question)
-        if max_proba > STRING_PROBA_THRES:
-            if len(preds) > 1:
-                idxs, _ = zip(*preds)
-                self.logger.info("idxs: {}".format(idxs))
-                matched_answers = self.entity_wrapper.match_entities(
-                    msg.question, msg_entities, subset_idxs=idxs)
-                if len(matched_answers) == 1:
-                    y_pred = [matched_answers[0][1]]
-                    y_prob = [ENTITY_MATCH_PROBA]
-                elif len(matched_answers) > 1:
-                    idxs, _ = zip(*matched_answers)
-                    y_pred, y_prob = self.cls.predict(x_tokens_testset, subset_idx=idxs)
-                else:
-                    y_pred, y_prob = self.cls.predict(x_tokens_testset, subset_idx=idxs)
-            else:
-                y_pred = [preds[0][1]]
-                y_prob = [max_proba]
-            self.logger.info("word match found: {}".format(y_pred))
-
-        else:
-            # get entity match
+        sm_proba, sm_preds = await self.string_match.get_string_match(msg.question)
+        if len(sm_preds) > 1:
+            idxs, _ = zip(*sm_preds)
+            self.logger.info("idxs: {}".format(idxs))
             matched_answers = self.entity_wrapper.match_entities(
-                msg.question, msg_entities)
-            self.logger.info("matched_entities: {}".format(matched_answers))
-            if matched_answers:
-                if len(matched_answers) == 1:
-                    y_pred = [matched_answers[0][1]]
-                    y_prob = [ENTITY_MATCH_PROBA]
-                else:
-                    train_idx = [e[0] for e in matched_answers]
-                    y_pred, y_prob = self.cls.predict(x_tokens_testset, subset_idx=train_idx)
-                    self.logger.info("multiple entity matches {}; pick {}".format(
-                        matched_answers, y_pred))
+                msg.question, msg_entities, subset_idxs=idxs)
+            if len(matched_answers) == 1:
+                sm_pred = [matched_answers[0][1]]
+                sm_prob = [ENTITY_MATCH_PROBA]
+            elif len(matched_answers) > 1:
+                idxs, _ = zip(*matched_answers)
+                sm_pred, sm_prob = self.cls.predict(x_tokens_testset, subset_idx=idxs)
+        elif len(sm_preds) == 1:
+            sm_pred, sm_prob = [sm_preds[0][1]], [sm_proba]
+        else:
+            sm_pred, sm_prob = [''], [0.0]
 
-            else:
-                # get new word embeddings
-                unique_tokens = list(set([w for l in x_tokens_testset for w in l]))
-                unk_tokens = self.cls.get_unknown_words(unique_tokens)
+        # entity matcher
+        matched_answers = self.entity_wrapper.match_entities(
+            msg.question, msg_entities)
+        if len(matched_answers) == 1:
+            er_pred = [matched_answers[0][1]]
+            er_prob = [ENTITY_MATCH_PROBA]
+        elif len(matched_answers) > 1:
+            idxs, _ = zip(*matched_answers)
+            er_pred, er_prob = self.cls.predict(x_tokens_testset, subset_idx=idxs)
+        else:
+            er_pred, er_prob = [''], [0.0]
+
+        if sm_prob[0] > er_prob[0] and sm_prob[0] > STRING_PROBA_THRES:
+            y_pred, y_prob = sm_pred, sm_prob
+        elif er_prob[0] > 0.:
+            y_pred, y_prob = er_pred, er_prob
+        else:
+            # get new word embeddings
+            unique_tokens = list(set([w for l in x_tokens_testset for w in l]))
+            unk_tokens = self.cls.get_unknown_words(unique_tokens)
+            if len(unk_tokens) > 0:
+                unk_words = await self.w2v_client.get_unknown_words(unk_tokens)
+                self.logger.info("unknown words: {}".format(unk_words))
+                if len(unk_words) > 0:
+                    unk_tokens = [w for w in unk_tokens if w not in unk_words]
+                    x_tokens_testset = [[w for w in s if w not in unk_words] for s in x_tokens_testset]
                 if len(unk_tokens) > 0:
-                    unk_words = await self.w2v_client.get_unknown_words(unk_tokens)
-                    self.logger.info("unknown words: {}".format(unk_words))
-                    if len(unk_words) > 0:
-                        unk_tokens = [w for w in unk_tokens if w not in unk_words]
-                        x_tokens_testset = [[w for w in s if w not in unk_words] for s in x_tokens_testset]
-                    if len(unk_tokens) > 0:
-                        vecs = await self.w2v_client.get_vectors_for_words(unk_tokens)
-                        self.cls.update_w2v(vecs)
+                    vecs = await self.w2v_client.get_vectors_for_words(unk_tokens)
+                    self.cls.update_w2v(vecs)
 
-                # get embedding match
-                y_pred, y_prob = self.cls.predict(x_tokens_testset)
+            # get embedding match
+            y_pred, y_prob = self.cls.predict(x_tokens_testset)
 
         resp = ait_c.ChatResponseMessage(msg, y_pred[0], float(y_prob[0]))
         return resp

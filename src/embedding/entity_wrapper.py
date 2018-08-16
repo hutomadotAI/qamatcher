@@ -142,9 +142,6 @@ class EntityWrapper:
         ents_msg, ents_q, ents_a = ents
         person = [e['value'].lower().split() for e in ents_msg if e['category'] == 'sys.person']
         person = [e for p in person for e in p]
-        self.logger.info("person: {}".format(person))
-        self.logger.info("ents_a: {}".format([e['value'].lower() for e in ents_a]))
-        self.logger.info("check: {}".format([e['value'].lower() in p for e in ents_a for p in person]))
         if len(person) > 0:
             return any([p in e['value'].lower() for e in ents_q for p in person])
         else:
