@@ -87,7 +87,7 @@ class EntityWrapper:
         _, _, cnt = zip(*interrog_matches)
         self.logger.info("interrog count: {}".format(cnt))
         max_cnt = max(cnt)
-        interrog_matches = [(m[0], m[1]) for m in interrog_matches if m[2] == max_cnt]
+        interrog_matches = [(m[0], m[1]) for m in interrog_matches if m[2] == max_cnt and max_cnt > 0]
         self.logger.info("interrog matches: {}".format(interrog_matches))
         if len(interrog_matches) > 0:
             train_ents = interrog_matches
@@ -127,8 +127,8 @@ class EntityWrapper:
         match += int(self.check_who_questions(test_match, ents))
         match += int(self.check_for_person(test_match, ents))
         match += int(self.check_for_custom_entity(test_match, ents))
-        # elif 'what' in test_match:
-        #     match = any([ent['category'] in ['sys.group', 'sys.organization'] for ent in train_ents])
+        match += int(self.check_who_questions_inv(test_match, ents))
+        # match += int(self.check_what_questions(test_match, ents))
         return match
 
     def check_who_questions(self, test_match, ents):
@@ -136,6 +136,22 @@ class EntityWrapper:
         match = False
         if 'who' in test_match and not any([e['category'] == 'sys.person' for e in ents_msg]):
             match = any([ent_a['category'] == 'sys.person' for ent_a in ents_a])
+        return match
+
+    def check_who_questions_inv(self, test_match, ents):
+        ents_msg, ents_q, ents_a = ents
+        match = False
+        if 'who' in test_match:
+            match = any([e in test_match for ent in ents_q for e in ent['value'].split()
+                         if ent['category'] == 'sys.person'])
+        return match
+
+    def check_what_questions(self, test_match, ents):
+        ents_msg, ents_q, ents_a = ents
+        match = False
+        orgs = [e['value'].lower() for e in ents_msg if e['category'] == ['sys.group', 'sys.organization']]
+        if 'what' in test_match and len(orgs) > 0:
+            match = any([ent_q['value'] in orgs for ent_q in ents_q])
         return match
 
     def check_for_person(self, test_match, ents):

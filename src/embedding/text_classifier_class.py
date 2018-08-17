@@ -89,7 +89,7 @@ class EmbeddingComparison:
         return -10.5 * probas / (-probas - 9.5)
 
     def downscale_probas(self, probas):
-        k = 0.2
+        k = 0.4  # 0.2
         return k * probas / (k - probas + 1.)
 
     def update_w2v(self, dic):
@@ -127,6 +127,7 @@ class EmbeddingComparison:
         cossim = np.where(cossim < 0., 0., cossim)
         if subset_idx:
             self.logger.info("cossims: {}".format(cossim))
+            self.logger.info("labels: {}".format(train_y))
         # most similar vector is the predicted class
         preds = np.argmax(cossim, 1)
         preds = [train_y[i] for i in preds]
