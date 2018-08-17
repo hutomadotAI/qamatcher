@@ -89,7 +89,7 @@ class EmbeddingComparison:
         return -10.5 * probas / (-probas - 9.5)
 
     def downscale_probas(self, probas):
-        k = 0.4  # 0.2
+        k = 0.3  # 0.2
         return k * probas / (k - probas + 1.)
 
     def update_w2v(self, dic):
