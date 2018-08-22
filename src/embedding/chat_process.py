@@ -56,19 +56,20 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
 
         # tokenize
         x_tokens_testset = [
-            await self.entity_wrapper.tokenize(msg.question)
+            await self.entity_wrapper.tokenize(msg.question, sw_size='xlarge')
         ]
         self.logger.info("x_tokens_testset: {}".format(x_tokens_testset))
+        self.logger.info("x_tokens_testset: {}".format(len(x_tokens_testset[0])))
 
         # get question entities
         msg_entities = await self.entity_wrapper.extract_entities(msg.question)
-        self.logger.info("msg_entities: {}".format(msg_entities))
+        # self.logger.info("msg_entities: {}".format(msg_entities))
 
         # get string match
         sm_proba, sm_preds = await self.string_match.get_string_match(msg.question)
         if len(sm_preds) > 1:
             sm_idxs, _ = zip(*sm_preds)
-            self.logger.info("sm_idxs: {}".format(sm_idxs))
+            # self.logger.info("sm_idxs: {}".format(sm_idxs))
             matched_answers = self.entity_wrapper.match_entities(
                 msg.question, msg_entities, subset_idxs=sm_idxs)
             if len(matched_answers) == 1:
@@ -78,6 +79,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
                 sm_idxs, _ = zip(*matched_answers)
                 if not any([self.string_match.train_data[i][0] == 'UNK' for i in sm_idxs]):
                     sm_pred, sm_prob = self.cls.predict(x_tokens_testset, subset_idx=sm_idxs)
+                    sm_prob[0] = min(0.99, sm_prob[0])
                 else:
                     sm_pred = ['']
                     sm_prob = [0.0]
@@ -99,6 +101,8 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
             er_idxs, _ = zip(*matched_answers)
             if not any([self.string_match.train_data[i][0] == 'UNK' for i in er_idxs]):
                 er_pred, er_prob = self.cls.predict(x_tokens_testset, subset_idx=er_idxs)
+                er_prob[0] = min(0.99, er_prob[0])
+
                 self.logger.info("er_pred: {} er_prob: {}".format(er_pred, er_prob))
             else:
                 er_pred = ['']
@@ -115,13 +119,13 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
             y_pred, y_prob = er_pred, er_prob
             self.logger.info("er wins: {}".format(y_pred))
         # if both ER and SM fail completely - EMB to the rescue!
-        else:
+        elif x_tokens_testset[0][0] != 'UNK':
             # get new word embeddings
             unique_tokens = list(set([w for l in x_tokens_testset for w in l]))
             unk_tokens = self.cls.get_unknown_words(unique_tokens)
             if len(unk_tokens) > 0:
                 unk_words = await self.w2v_client.get_unknown_words(unk_tokens)
-                self.logger.info("unknown words: {}".format(unk_words))
+                # self.logger.info("unknown words: {}".format(unk_words))
                 if len(unk_words) > 0:
                     unk_tokens = [w for w in unk_tokens if w not in unk_words]
                     x_tokens_testset = [[w for w in s if w not in unk_words] for s in x_tokens_testset]
@@ -132,6 +136,9 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
             # get embedding match
             y_pred, y_prob = self.cls.predict(x_tokens_testset)
             self.logger.info("default emb: {}".format(y_pred))
+        else:
+            y_pred = [""]
+            y_prob = [0.0]
 
         resp = ait_c.ChatResponseMessage(msg, y_pred[0], float(y_prob[0]))
         return resp

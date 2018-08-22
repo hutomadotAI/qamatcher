@@ -49,7 +49,7 @@ class EntityWrapper:
             e['value'] = e['value'].lower()
             if e['value'].startswith('the'):
                 e['value'] = e['value'].replace('the', '')
-        self.logger.info("entities for '{}': {}".format(sample, entities))
+        # self.logger.info("entities for '{}': {}".format(sample, entities))
         return entities
 
     async def tokenize(self, sample, filter_ents='True', sw_size='small'):
@@ -75,7 +75,7 @@ class EntityWrapper:
         test_match = self.__prepro_question(test_q)
         max_matches = 0
         matched_labels = []
-        self.logger.info("test_match: {}".format(test_match))
+        # self.logger.info("test_match: {}".format(test_match))
 
         # subset if already pre-selected using different algo
         sub_idxs = subset_idxs if subset_idxs is not None else list(range(len(self.train_entities_a)))
@@ -85,11 +85,11 @@ class EntityWrapper:
         interrog_matches = [(i, ents_q, self.interrogative_match(test_match, (ents_msg, ents_q, ents_a)))
                             for i, ents_q, ents_a in ents_q_a]
         _, _, cnt = zip(*interrog_matches)
-        self.logger.info("interrog count: {}".format(cnt))
+        # self.logger.info("interrog count: {}".format(cnt))
         max_cnt = max(cnt)
         interrog_matches = [(m[0], m[1]) for m in interrog_matches
                             if m[2] == max_cnt and max_cnt > 0]
-        self.logger.info("interrog matches: {}".format(interrog_matches))
+        # self.logger.info("interrog matches: {}".format(interrog_matches))
         if len(interrog_matches) > 0:
             train_ents = interrog_matches
         else:
@@ -114,13 +114,13 @@ class EntityWrapper:
                 matched_labels.append((i, self.train_labels[i]))
 
         if len(matched_labels) > 0:
-            self.logger.info("entity matches: {} ({} max matches)".format(matched_labels, max_matches))
+            # self.logger.info("entity matches: {} ({} max matches)".format(matched_labels, max_matches))
             return matched_labels
         elif len(interrog_matches) > 0:
-            self.logger.info("interrog matches: {}".format([(i, self.train_labels[i]) for i, _ in interrog_matches]))
+            # self.logger.info("interrog matches: {}".format([(i, self.train_labels[i]) for i, _ in interrog_matches]))
             return [(i, self.train_labels[i]) for i, _ in interrog_matches]
         else:
-            self.logger.info("no entity matches")
+            # self.logger.info("no entity matches")
             return []
 
     def interrogative_match(self, test_match, ents):

@@ -115,7 +115,7 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
 
             x_tokens = []
             for question in x:
-                tokens = await self.entity_wrapper.tokenize(question)
+                tokens = await self.entity_wrapper.tokenize(question, sw_size='xlarge')
                 x_tokens.append(tokens)
                 self.logger.info("tokens: {}".format((question, tokens)))
                 self.report_progress(0.3)
