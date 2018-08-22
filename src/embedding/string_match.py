@@ -40,12 +40,9 @@ class StringMatch:
         tok_train = self.tok_train if subset_idx is None else [self.tok_train[i] for i in subset_idx]
         train_data = self.train_data if subset_idx is None else [self.train_data[i] for i in subset_idx]
         idx = subset_idx if subset_idx is not None else range(len(train_data))
-        # tok_q = q.lower().split()
         tok_q = await self.entity_wrapper.tokenize(q,
                                                    filter_ents=self.filter_entities,
                                                    sw_size=self.stopword_size)
-        self.logger.info("tok_train: {}".format(tok_train))
-        self.logger.info("tok_q: {}".format(tok_q))
 
         # search for intent-like entities first
         if "@" in q:

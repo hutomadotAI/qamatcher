@@ -87,7 +87,8 @@ class EntityWrapper:
         _, _, cnt = zip(*interrog_matches)
         self.logger.info("interrog count: {}".format(cnt))
         max_cnt = max(cnt)
-        interrog_matches = [(m[0], m[1]) for m in interrog_matches if m[2] == max_cnt and max_cnt > 0]
+        interrog_matches = [(m[0], m[1]) for m in interrog_matches
+                            if m[2] == max_cnt and max_cnt > 0]
         self.logger.info("interrog matches: {}".format(interrog_matches))
         if len(interrog_matches) > 0:
             train_ents = interrog_matches

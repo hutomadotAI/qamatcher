@@ -130,7 +130,6 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
             if not x_tokens_set:
                 x_tokens_set = ['UNK']
             x_tokens = [l if len(l) > 0 else ['UNK'] for l in x_tokens]
-
             self.report_progress(0.4)
 
             vecs = await self.get_vectors(x_tokens_set)
