@@ -79,7 +79,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
                 sm_idxs, _ = zip(*matched_answers)
                 if not any([self.string_match.train_data[i][0] == 'UNK' for i in sm_idxs]):
                     sm_pred, sm_prob = self.cls.predict(x_tokens_testset, subset_idx=sm_idxs)
-                    sm_prob[0] = min(0.99, sm_prob[0])
+                    sm_prob = [ENTITY_MATCH_PROBA+0.1]  # min(0.99, sm_prob[0])
                 else:
                     sm_pred = ['']
                     sm_prob = [0.0]
@@ -101,7 +101,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
             er_idxs, _ = zip(*matched_answers)
             if not any([self.string_match.train_data[i][0] == 'UNK' for i in er_idxs]):
                 er_pred, er_prob = self.cls.predict(x_tokens_testset, subset_idx=er_idxs)
-                er_prob[0] = min(0.99, er_prob[0])
+                er_prob = [ENTITY_MATCH_PROBA]  # min(0.99, er_prob[0])
 
                 self.logger.info("er_pred: {} er_prob: {}".format(er_pred, er_prob))
             else:
@@ -132,7 +132,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
                 if len(unk_tokens) > 0:
                     vecs = await self.w2v_client.get_vectors_for_words(unk_tokens)
                     self.cls.update_w2v(vecs)
-
+            self.logger.info("final tok set: {}".format(x_tokens_testset))
             # get embedding match
             y_pred, y_prob = self.cls.predict(x_tokens_testset)
             self.logger.info("default emb: {}".format(y_pred))

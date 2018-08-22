@@ -117,7 +117,6 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
             for question in x:
                 tokens = await self.entity_wrapper.tokenize(question, sw_size='xlarge')
                 x_tokens.append(tokens)
-                self.logger.info("tokens: {}".format((question, tokens)))
                 self.report_progress(0.3)
 
             x_tokens_set = list(set([w for l in x_tokens for w in l]))
@@ -130,6 +129,8 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
             if not x_tokens_set:
                 x_tokens_set = ['UNK']
             x_tokens = [l if len(l) > 0 else ['UNK'] for l in x_tokens]
+            for question, tokens in zip(x, x_tokens):
+                self.logger.info("tokens: {}".format((question, tokens)))
             self.report_progress(0.4)
 
             vecs = await self.get_vectors(x_tokens_set)
