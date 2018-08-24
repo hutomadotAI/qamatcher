@@ -135,6 +135,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
             self.logger.info("final tok set: {}".format(x_tokens_testset))
             # get embedding match
             y_pred, y_prob = self.cls.predict(x_tokens_testset)
+            y_prob = [max(0., y_prob[0] - 0.15)]
             self.logger.info("default emb: {}".format(y_pred))
         else:
             y_pred = [""]
