@@ -65,7 +65,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         # self.logger.info("msg_entities: {}".format(msg_entities))
 
         # get string match
-        sm_prob, sm_pred = await self.get_string_match(msg, msg_entities, x_tokens_testset)
+        sm_pred, sm_prob = await self.get_string_match(msg, msg_entities, x_tokens_testset)
 
         # entity matcher
         er_pred, er_prob = await self.get_entity_match(msg, msg_entities, x_tokens_testset)
@@ -80,7 +80,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
             self.logger.info("er wins: {}".format(y_pred))
         # if both ER and SM fail completely - EMB to the rescue!
         elif x_tokens_testset[0][0] != 'UNK':
-            y_pred, y_prob = self.get_embedding_match(msg, msg_entities, x_tokens_testset)
+            y_pred, y_prob = await self.get_embedding_match(msg, msg_entities, x_tokens_testset)
             self.logger.info("default emb: {}".format(y_pred))
         else:
             y_pred = [""]
