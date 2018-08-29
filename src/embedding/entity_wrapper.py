@@ -74,8 +74,6 @@ class EntityWrapper:
 
     def match_entities(self, test_q, ents_msg, subset_idxs=None):
         test_match = self.__prepro_question(test_q)
-        max_matches = 0
-        matched_labels = []
         # self.logger.info("test_match: {}".format(test_match))
 
         # subset if already pre-selected using different algo
@@ -100,19 +98,8 @@ class EntityWrapper:
         else:
             train_ents = [(i, ents_q) for i, ents_q, ents_a in ents_q_a]
 
-        # search for entity matches between q&a
-        for i, tr_ents in train_ents:
-            num_matches = 0
-            # self.logger.info("train sample ents: {}".format(tr_ents))
-            for ent in tr_ents:
-                tmp_ent = self.split_entities(ent)
-                num_matches = sum([1 for e in tmp_ent
-                                   if e not in ['the'] and e in test_match])
-            if num_matches > max_matches:
-                max_matches = num_matches
-                matched_labels = [(i, self.train_labels[i])]
-            elif num_matches == max_matches and max_matches > 0:
-                matched_labels.append((i, self.train_labels[i]))
+        # search for entity matches between train and test q's
+        matched_labels = self.find_matches(train_ents, test_match)
 
         if len(matched_labels) > 0:
             # self.logger.info("entity matches: {} ({} max matches)".format(
@@ -125,6 +112,24 @@ class EntityWrapper:
         else:
             # self.logger.info("no entity matches")
             return []
+
+    def find_matches(self, train_ents, test_match):
+        max_matches = 0
+        matched_labels = []
+        for i, tr_ents in train_ents:
+            num_matches = 0
+            # self.logger.info("train sample ents: {}".format(tr_ents))
+            for ent in tr_ents:
+                tmp_ent = self.split_entities(ent)
+                for e in tmp_ent:
+                    if e not in ['the'] and e in test_match:
+                        num_matches += 1
+            if num_matches > max_matches:
+                max_matches = num_matches
+                matched_labels = [(i, self.train_labels[i])]
+            elif num_matches == max_matches and max_matches > 0:
+                matched_labels.append((i, self.train_labels[i]))
+        return matched_labels
 
     def split_entities(self, ent):
         if ent['category'] in [
