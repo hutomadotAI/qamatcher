@@ -47,9 +47,8 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         self.logger.info("Started chat process for AI %s" % msg.ai_id)
         await self.setup_chat_session()
 
-    async def chat_request(self, msg: ait_c.ChatRequestMessage):  # noqa: C901
+    async def chat_request(self, msg: ait_c.ChatRequestMessage):
         """Handle a chat request"""
-        # TODO: Make this function simpler so we can meet Flake8 C901 quality bar
         if msg.update_state:
             self.setup_chat_session()
 
@@ -65,6 +64,77 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         msg_entities = await self.entity_wrapper.extract_entities(msg.question)
         # self.logger.info("msg_entities: {}".format(msg_entities))
 
+        # get string match
+        sm_prob, sm_pred = await self.get_string_match(msg, msg_entities, x_tokens_testset)
+
+        # entity matcher
+        er_pred, er_prob = await self.get_entity_match(msg, msg_entities, x_tokens_testset)
+
+        # if SM proba larger take that
+        if sm_prob[0] > er_prob[0] and sm_prob[0] > STRING_PROBA_THRES:
+            y_pred, y_prob = sm_pred, sm_prob
+            self.logger.info("sm wins: {}".format(y_pred))
+        # otherwise take ER result if there is any
+        elif er_prob[0] > 0.:
+            y_pred, y_prob = er_pred, er_prob
+            self.logger.info("er wins: {}".format(y_pred))
+        # if both ER and SM fail completely - EMB to the rescue!
+        elif x_tokens_testset[0][0] != 'UNK':
+            y_pred, y_prob = self.get_embedding_match(msg, msg_entities, x_tokens_testset)
+            self.logger.info("default emb: {}".format(y_pred))
+        else:
+            y_pred = [""]
+            y_prob = [0.0]
+
+        resp = ait_c.ChatResponseMessage(msg, y_pred[0], float(y_prob[0]))
+        return resp
+
+    async def get_embedding_match(self, msg, msg_entities, x_tokens_testset):
+        # get new word embeddings
+        unique_tokens = list(set([w for l in x_tokens_testset for w in l]))
+        unk_tokens = self.cls.get_unknown_words(unique_tokens)
+        if len(unk_tokens) > 0:
+            unk_words = await self.w2v_client.get_unknown_words(unk_tokens)
+            # self.logger.info("unknown words: {}".format(unk_words))
+            if len(unk_words) > 0:
+                unk_tokens = [w for w in unk_tokens if w not in unk_words]
+                x_tokens_testset = [[w for w in s if w not in unk_words]
+                                    for s in x_tokens_testset]
+            if len(unk_tokens) > 0:
+                vecs = await self.w2v_client.get_vectors_for_words(
+                    unk_tokens)
+                self.cls.update_w2v(vecs)
+        self.logger.info("final tok set: {}".format(x_tokens_testset))
+        # get embedding match
+        y_pred, y_prob = self.cls.predict(x_tokens_testset)
+        y_prob = [max(0., y_prob[0] - 0.15)]
+        return y_pred, y_prob
+
+    async def get_entity_match(self, msg, msg_entities, x_tokens_testset):
+        matched_answers = self.entity_wrapper.match_entities(
+            msg.question, msg_entities)
+        if len(matched_answers) == 1:
+            er_pred = [matched_answers[0][1]]
+            er_prob = [ENTITY_MATCH_PROBA]
+        elif len(matched_answers) > 1:
+            er_idxs, _ = zip(*matched_answers)
+            if not any(
+                [self.string_match.train_data[i][0] == 'UNK'
+                 for i in er_idxs]):
+                er_pred, er_prob = self.cls.predict(
+                    x_tokens_testset, subset_idx=er_idxs)
+                er_prob = [ENTITY_MATCH_PROBA]  # min(0.99, er_prob[0])
+
+                self.logger.info("er_pred: {} er_prob: {}".format(
+                    er_pred, er_prob))
+            else:
+                er_pred = ['']
+                er_prob = [0.0]
+        else:
+            er_pred, er_prob = [''], [0.0]
+        return er_pred, er_prob
+
+    async def get_string_match(self, msg, msg_entities, x_tokens_testset):
         # get string match
         sm_proba, sm_preds = await self.string_match.get_string_match(
             msg.question)
@@ -99,64 +169,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         else:
             sm_pred, sm_prob = [''], [0.0]
 
-        # entity matcher
-        matched_answers = self.entity_wrapper.match_entities(
-            msg.question, msg_entities)
-        if len(matched_answers) == 1:
-            er_pred = [matched_answers[0][1]]
-            er_prob = [ENTITY_MATCH_PROBA]
-        elif len(matched_answers) > 1:
-            er_idxs, _ = zip(*matched_answers)
-            if not any(
-                [self.string_match.train_data[i][0] == 'UNK'
-                 for i in er_idxs]):
-                er_pred, er_prob = self.cls.predict(
-                    x_tokens_testset, subset_idx=er_idxs)
-                er_prob = [ENTITY_MATCH_PROBA]  # min(0.99, er_prob[0])
-
-                self.logger.info("er_pred: {} er_prob: {}".format(
-                    er_pred, er_prob))
-            else:
-                er_pred = ['']
-                er_prob = [0.0]
-        else:
-            er_pred, er_prob = [''], [0.0]
-
-        # if SM proba larger take that
-        if sm_prob[0] > er_prob[0] and sm_prob[0] > STRING_PROBA_THRES:
-            y_pred, y_prob = sm_pred, sm_prob
-            self.logger.info("sm wins: {}".format(y_pred))
-        # otherwise take ER result if there is any
-        elif er_prob[0] > 0.:
-            y_pred, y_prob = er_pred, er_prob
-            self.logger.info("er wins: {}".format(y_pred))
-        # if both ER and SM fail completely - EMB to the rescue!
-        elif x_tokens_testset[0][0] != 'UNK':
-            # get new word embeddings
-            unique_tokens = list(set([w for l in x_tokens_testset for w in l]))
-            unk_tokens = self.cls.get_unknown_words(unique_tokens)
-            if len(unk_tokens) > 0:
-                unk_words = await self.w2v_client.get_unknown_words(unk_tokens)
-                # self.logger.info("unknown words: {}".format(unk_words))
-                if len(unk_words) > 0:
-                    unk_tokens = [w for w in unk_tokens if w not in unk_words]
-                    x_tokens_testset = [[w for w in s if w not in unk_words]
-                                        for s in x_tokens_testset]
-                if len(unk_tokens) > 0:
-                    vecs = await self.w2v_client.get_vectors_for_words(
-                        unk_tokens)
-                    self.cls.update_w2v(vecs)
-            self.logger.info("final tok set: {}".format(x_tokens_testset))
-            # get embedding match
-            y_pred, y_prob = self.cls.predict(x_tokens_testset)
-            y_prob = [max(0., y_prob[0] - 0.15)]
-            self.logger.info("default emb: {}".format(y_pred))
-        else:
-            y_pred = [""]
-            y_prob = [0.0]
-
-        resp = ait_c.ChatResponseMessage(msg, y_pred[0], float(y_prob[0]))
-        return resp
+        return sm_pred, sm_prob
 
     async def setup_chat_session(self):
         self.logger.info("Reloading model for AI %s" % self.ai_id)

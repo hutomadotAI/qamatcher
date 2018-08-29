@@ -61,13 +61,12 @@ class StringMatch:
             ]
         self.logger.info("match_probas: {}".format(match_probas))
         max_proba = max(match_probas)
-        # TODO: Ignore flake8 E731 error for now, review it.
         if all_larger_zero:
-            cond = lambda a, b: a > 0.  # noqa: E731
+            def f(a, b): return a > 0.
         else:
-            cond = lambda a, b: a == b  # noqa: E731
+            def f(a, b): return a == b
         preds = [(idx[i], train_data[i][1]) for i, p in enumerate(match_probas)
-                 if cond(p, max_proba)]
+                 if f(p, max_proba)]
         self.logger.info("string_match: {} - {}".format(max_proba, preds))
         return max_proba, preds
 

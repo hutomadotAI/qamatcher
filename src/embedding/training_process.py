@@ -28,7 +28,7 @@ def _get_logger():
 
 
 class TrainEmbedMessage(aitp.TrainingMessage):
-    """Message class for training a SVCLASSIFIER"""
+    """Message class for training a QA-Matcher"""
 
     def __init__(self, ai_path, ai_id, max_training_mins: int):
         super().__init__(ai_path, ai_id, max_training_mins)

@@ -72,8 +72,7 @@ class EntityWrapper:
         test_match = test_match.split()
         return test_match
 
-    def match_entities(self, test_q, ents_msg, subset_idxs=None):  # noqa: C901
-        # TODO: Make this function simpler so we can meet Flake8 C901 quality bar
+    def match_entities(self, test_q, ents_msg, subset_idxs=None):
         test_match = self.__prepro_question(test_q)
         max_matches = 0
         matched_labels = []
@@ -106,15 +105,9 @@ class EntityWrapper:
             num_matches = 0
             # self.logger.info("train sample ents: {}".format(tr_ents))
             for ent in tr_ents:
-                if ent['category'] in [
-                        'sys.person', 'sys.group', 'sys.organization'
-                ]:
-                    tmp_ent = ent['value'].split()
-                else:
-                    tmp_ent = [ent['value']]
-                for e in tmp_ent:
-                    if e not in ['the'] and e in test_match:
-                        num_matches += 1
+                tmp_ent = self.split_entities(ent)
+                num_matches = sum([1 for e in tmp_ent
+                                   if e not in ['the'] and e in test_match])
             if num_matches > max_matches:
                 max_matches = num_matches
                 matched_labels = [(i, self.train_labels[i])]
@@ -132,6 +125,15 @@ class EntityWrapper:
         else:
             # self.logger.info("no entity matches")
             return []
+
+    def split_entities(self, ent):
+        if ent['category'] in [
+                'sys.person', 'sys.group', 'sys.organization'
+        ]:
+            tmp_ent = ent['value'].split()
+        else:
+            tmp_ent = [ent['value']]
+        return tmp_ent
 
     def interrogative_match(self, test_match, ents):
         match = 0
