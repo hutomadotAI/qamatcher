@@ -10,8 +10,12 @@ import unittest
 import ai_training as ait
 
 
-async def mock_w2v_call(payload):
-    return {'vectors': {"word1": [1.1, 1.2, 1.3], "word2": [0.1, 0.2, 0.3]}}
+async def mock_w2v_call(payload, endpoint='words'):
+    if endpoint == "words":
+        return {'vectors': {"word1": [1.1, 1.2, 1.3], "word2": [0.1, 0.2, 0.3]}}
+    elif endpoint == "unk_words":
+        return {'unk_words': ["word1", "word2"]}
+    return {}
 
 
 async def get_from_er_server(relative_url, params=None):
@@ -46,7 +50,31 @@ async def mocked_train(mocker, loop):
         "get_from_er_server",
         new=get_from_er_server)
 
-    training.entity_wrapper.train_entities = [
+    training.entity_wrapper.train_entities_q = [
+        [{
+            'category': 'sys.places',
+            'value': 'london',
+            'start': 0,
+            'end': 6
+        }, {
+            'category': 'sys.date',
+            'value': 'today',
+            'start': 10,
+            'end': 17
+        }],
+        [{
+            'category': 'sys.places',
+            'value': 'paris',
+            'start': 0,
+            'end': 5
+        }, {
+            'category': 'sys.person',
+            'value': 'fred bloggs',
+            'start': 8,
+            'end': 18
+        }]]
+
+    training.entity_wrapper.train_entities_a = [
         [{
             'category': 'sys.places',
             'value': 'london',
@@ -107,23 +135,26 @@ async def test_er_tokenize(mocked_train):
 
 async def test_er_match_entities_none(mocked_train):
     question = "this question has no matching entities"
+    entities = await get_from_er_server("ner")
     matched_label = mocked_train.entity_wrapper.match_entities(
-        question)
+        question, entities)
     assert len(matched_label) == 0
 
 
 async def test_er_match_entities_1(mocked_train):
     question = "this question matches London"
+    entities = await get_from_er_server("ner")
     matched_label = mocked_train.entity_wrapper.match_entities(
-        question)
+        question, entities)
     assert len(matched_label) == 1
     assert matched_label[0][1] == "You said London today"
 
 
 async def test_er_match_entities_2(mocked_train):
     question = "this question matches Bloggs Fred"
+    entities = await get_from_er_server("ner")
     matched_label = mocked_train.entity_wrapper.match_entities(
-        question)
+        question, entities)
     assert len(matched_label) == 1
     assert matched_label[0][1] == "You said Paris Fred Bloggs"
 

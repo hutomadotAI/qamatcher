@@ -1,4 +1,4 @@
-    # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import dill
 import numpy as np
@@ -121,13 +121,14 @@ class EmbeddingComparison:
         target_tfidf = self.vectorizer.transform(X)
         target_tfidf = target_tfidf - self.pca.components_[0]
         # compute cosine similarity
-        cossim = np.dot(target_tfidf, train_x.T) / (
-            np.outer(np.linalg.norm(target_tfidf, axis=1), np.linalg.norm(train_x, axis=1)))
+        cossim = np.dot(target_tfidf, train_x.T) / (np.outer(
+            np.linalg.norm(target_tfidf, axis=1),
+            np.linalg.norm(train_x, axis=1)))
         # self.logger.info("cossim: {}".format(cossim))
         cossim = np.where(cossim < 0., 0., cossim)
         # if subset_idx:
-            # self.logger.info("cossims: {}".format(cossim))
-            # self.logger.info("labels: {}".format(train_y))
+        # self.logger.info("cossims: {}".format(cossim))
+        # self.logger.info("labels: {}".format(train_y))
         # most similar vector is the predicted class
         preds = np.argmax(cossim, 1)
         preds = [train_y[i] for i in preds]
@@ -138,8 +139,10 @@ class EmbeddingComparison:
         self.__logger.debug("Saving model to {}".format(file_path))
 
         with file_path.open('wb') as f:
-            dill.dump([self.X_tfidf, self.y, self.pca, self.classes,
-                       self.vectorizer.word2weight, self.w2v], f)  # , self.X
+            dill.dump([
+                self.X_tfidf, self.y, self.pca, self.classes,
+                self.vectorizer.word2weight, self.w2v
+            ], f)  # , self.X
 
     def load_model(self, file_path: Path):
         self.__logger.debug("Loading model from {}".format(file_path))

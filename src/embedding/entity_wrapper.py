@@ -1,6 +1,5 @@
 import aiohttp
 import dill
-import string
 import logging
 from pathlib import Path
 
@@ -53,9 +52,11 @@ class EntityWrapper:
         return entities
 
     async def tokenize(self, sample, filter_ents='True', sw_size='small'):
-        tokens = await self.get_from_er_server("tokenize", {'q': sample,
-                                                            'filter_ents': filter_ents,
-                                                            'sw_size': sw_size})
+        tokens = await self.get_from_er_server("tokenize", {
+            'q': sample,
+            'filter_ents': filter_ents,
+            'sw_size': sw_size
+        })
         if not isinstance(tokens, list):
             raise EntityWrapperException(
                 "Unexpected ER response - should be a list")
@@ -71,18 +72,23 @@ class EntityWrapper:
         test_match = test_match.split()
         return test_match
 
-    def match_entities(self, test_q, ents_msg, subset_idxs=None):
+    def match_entities(self, test_q, ents_msg, subset_idxs=None):  # noqa: C901
+        # TODO: Make this function simpler so we can meet Flake8 C901 quality bar
         test_match = self.__prepro_question(test_q)
         max_matches = 0
         matched_labels = []
         # self.logger.info("test_match: {}".format(test_match))
 
         # subset if already pre-selected using different algo
-        sub_idxs = subset_idxs if subset_idxs is not None else list(range(len(self.train_entities_a)))
-        ents_q_a = [(i, self.train_entities_q[i], self.train_entities_a[i]) for i in sub_idxs]
+        sub_idxs = subset_idxs if subset_idxs is not None else list(
+            range(len(self.train_entities_a)))
+        ents_q_a = [(i, self.train_entities_q[i], self.train_entities_a[i])
+                    for i in sub_idxs]
 
         # search for interrogative words matching entitites
-        interrog_matches = [(i, ents_q, self.interrogative_match(test_match, (ents_msg, ents_q, ents_a)))
+        interrog_matches = [(i, ents_q,
+                             self.interrogative_match(
+                                 test_match, (ents_msg, ents_q, ents_a)))
                             for i, ents_q, ents_a in ents_q_a]
         _, _, cnt = zip(*interrog_matches)
         # self.logger.info("interrog count: {}".format(cnt))
@@ -100,7 +106,9 @@ class EntityWrapper:
             num_matches = 0
             # self.logger.info("train sample ents: {}".format(tr_ents))
             for ent in tr_ents:
-                if ent['category'] in ['sys.person', 'sys.group', 'sys.organization']:
+                if ent['category'] in [
+                        'sys.person', 'sys.group', 'sys.organization'
+                ]:
                     tmp_ent = ent['value'].split()
                 else:
                     tmp_ent = [ent['value']]
@@ -114,10 +122,12 @@ class EntityWrapper:
                 matched_labels.append((i, self.train_labels[i]))
 
         if len(matched_labels) > 0:
-            # self.logger.info("entity matches: {} ({} max matches)".format(matched_labels, max_matches))
+            # self.logger.info("entity matches: {} ({} max matches)".format(
+            #   matched_labels, max_matches))
             return matched_labels
         elif len(interrog_matches) > 0:
-            # self.logger.info("interrog matches: {}".format([(i, self.train_labels[i]) for i, _ in interrog_matches]))
+            # self.logger.info("interrog matches: {}".format(
+            #   [(i, self.train_labels[i]) for i, _ in interrog_matches]))
             return [(i, self.train_labels[i]) for i, _ in interrog_matches]
         else:
             # self.logger.info("no entity matches")
@@ -135,38 +145,52 @@ class EntityWrapper:
     def check_who_questions(self, test_match, ents):
         ents_msg, ents_q, ents_a = ents
         match = False
-        if 'who' in test_match and not any([e['category'] == 'sys.person' for e in ents_msg]):
-            match = any([ent_a['category'] == 'sys.person' for ent_a in ents_a])
+        if 'who' in test_match and not any(
+                [e['category'] == 'sys.person' for e in ents_msg]):
+            match = any(
+                [ent_a['category'] == 'sys.person' for ent_a in ents_a])
         return match
 
     def check_who_questions_inv(self, test_match, ents):
         ents_msg, ents_q, ents_a = ents
         match = False
         if 'who' in test_match:
-            match = any([e in test_match for ent in ents_q for e in ent['value'].split()
-                         if ent['category'] == 'sys.person'])
+            match = any([
+                e in test_match for ent in ents_q
+                for e in ent['value'].split()
+                if ent['category'] == 'sys.person'
+            ])
         return match
 
     def check_what_questions(self, test_match, ents):
         ents_msg, ents_q, ents_a = ents
         match = False
-        orgs = [e['value'].lower() for e in ents_msg if e['category'] == ['sys.group', 'sys.organization']]
+        orgs = [
+            e['value'].lower() for e in ents_msg
+            if e['category'] == ['sys.group', 'sys.organization']
+        ]
         if 'what' in test_match and len(orgs) > 0:
             match = any([ent_q['value'] in orgs for ent_q in ents_q])
         return match
 
     def check_for_person(self, test_match, ents):
         ents_msg, ents_q, ents_a = ents
-        person = [e['value'].lower().split() for e in ents_msg if e['category'] == 'sys.person']
+        person = [
+            e['value'].lower().split() for e in ents_msg
+            if e['category'] == 'sys.person'
+        ]
         person = [e for p in person for e in p]
         if len(person) > 0:
-            return any([p in e['value'].lower() for e in ents_q for p in person])
+            return any(
+                [p in e['value'].lower() for e in ents_q for p in person])
         else:
             return False
 
     def check_for_custom_entity(self, test_match, ents):
         ents_msg, ents_q, ents_a = ents
-        cust_ents = [e['value'] for e in ents_msg if e['category'].startswith("@")]
+        cust_ents = [
+            e['value'] for e in ents_msg if e['category'].startswith("@")
+        ]
         if len(cust_ents) > 0:
             return any([e['value'] in cust_ents for e in ents_a])
         else:
