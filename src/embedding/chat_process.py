@@ -50,7 +50,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
     async def chat_request(self, msg: ait_c.ChatRequestMessage):
         """Handle a chat request"""
         if msg.update_state:
-            self.setup_chat_session()
+            await self.setup_chat_session()
 
         # tokenize
         x_tokens_testset = [

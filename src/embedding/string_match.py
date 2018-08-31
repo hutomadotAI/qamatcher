@@ -59,6 +59,7 @@ class StringMatch:
                 self.__jaccard_similarity(tok_q, t)
                 if '@' not in ' '.join(t) else 0.0 for t in tok_train
             ]
+
         self.logger.info("match_probas: {}".format(match_probas))
         max_proba = max(match_probas)
         if all_larger_zero:
