@@ -70,3 +70,7 @@ fabric.properties
 
 # ignore all files in src/ai
 src/ai
+
+.idea/
+.xml
+.iml

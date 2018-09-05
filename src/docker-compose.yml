@@ -7,8 +7,9 @@ services:
       context: ../../word2vec/src
       dockerfile: Dockerfile
     volumes:
-      - ../../word2vec/src/hu_w2v:/src/hu_w2v
-      - /mnt/storage/thomas/word_vectors/:/datasets
+      - ../../word2vec/src/word2vec:/src/word2vec
+      - ../../word2vec/src/datasets:/datasets
+#      - /mnt/storage/thomas/word_vectors/:/datasets
     ports:
       - 10002:9090
     environment:
