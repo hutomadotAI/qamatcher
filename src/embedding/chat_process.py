@@ -56,13 +56,13 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         x_tokens_testset = [
             await self.entity_wrapper.tokenize(msg.question, sw_size='xlarge')
         ]
-        self.logger.info("x_tokens_testset: {}".format(x_tokens_testset))
-        self.logger.info("x_tokens_testset: {}".format(
+        self.logger.debug("x_tokens_testset: {}".format(x_tokens_testset))
+        self.logger.debug("x_tokens_testset: {}".format(
             len(x_tokens_testset[0])))
 
         # get question entities
         msg_entities = await self.entity_wrapper.extract_entities(msg.question)
-        # self.logger.info("msg_entities: {}".format(msg_entities))
+        self.logger.debug("msg_entities: {}".format(msg_entities))
 
         # get string match
         sm_pred, sm_prob = await self.get_string_match(msg, msg_entities, x_tokens_testset)
@@ -95,7 +95,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         unk_tokens = self.cls.get_unknown_words(unique_tokens)
         if len(unk_tokens) > 0:
             unk_words = await self.w2v_client.get_unknown_words(unk_tokens)
-            # self.logger.info("unknown words: {}".format(unk_words))
+            self.logger.debug("unknown words: {}".format(unk_words))
             if len(unk_words) > 0:
                 unk_tokens = [w for w in unk_tokens if w not in unk_words]
                 x_tokens_testset = [[w for w in s if w not in unk_words]
@@ -104,7 +104,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
                 vecs = await self.w2v_client.get_vectors_for_words(
                     unk_tokens)
                 self.cls.update_w2v(vecs)
-        self.logger.info("final tok set: {}".format(x_tokens_testset))
+        self.logger.debug("final tok set: {}".format(x_tokens_testset))
         # get embedding match
         y_pred, y_prob = self.cls.predict(x_tokens_testset)
         y_prob = [max(0., y_prob[0] - 0.15)]
@@ -125,7 +125,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
                     x_tokens_testset, subset_idx=er_idxs)
                 er_prob = [ENTITY_MATCH_PROBA]  # min(0.99, er_prob[0])
 
-                self.logger.info("er_pred: {} er_prob: {}".format(
+                self.logger.debug("er_pred: {} er_prob: {}".format(
                     er_pred, er_prob))
             else:
                 er_pred = ['']
@@ -140,7 +140,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
             msg.question)
         if len(sm_preds) > 1:
             sm_idxs, _ = zip(*sm_preds)
-            # self.logger.info("sm_idxs: {}".format(sm_idxs))
+            self.logger.debug("sm_idxs: {}".format(sm_idxs))
             matched_answers = self.entity_wrapper.match_entities(
                 msg.question, msg_entities, subset_idxs=sm_idxs)
             if len(matched_answers) == 1:

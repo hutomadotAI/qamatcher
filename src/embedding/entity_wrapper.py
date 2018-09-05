@@ -48,7 +48,7 @@ class EntityWrapper:
             e['value'] = e['value'].lower()
             if e['value'].startswith('the'):
                 e['value'] = e['value'].replace('the', '')
-        # self.logger.info("entities for '{}': {}".format(sample, entities))
+        self.logger.debug("entities for '{}': {}".format(sample, entities))
         return entities
 
     async def tokenize(self, sample, filter_ents='True', sw_size='small'):
@@ -74,7 +74,7 @@ class EntityWrapper:
 
     def match_entities(self, test_q, ents_msg, subset_idxs=None):
         test_match = self.__prepro_question(test_q)
-        # self.logger.info("test_match: {}".format(test_match))
+        self.logger.debug("test_match: {}".format(test_match))
 
         # subset if already pre-selected using different algo
         sub_idxs = subset_idxs if subset_idxs is not None else list(
@@ -88,11 +88,11 @@ class EntityWrapper:
                                  test_match, (ents_msg, ents_q, ents_a)))
                             for i, ents_q, ents_a in ents_q_a]
         _, _, cnt = zip(*interrog_matches)
-        # self.logger.info("interrog count: {}".format(cnt))
+        self.logger.debug("interrog count: {}".format(cnt))
         max_cnt = max(cnt)
         interrog_matches = [(m[0], m[1]) for m in interrog_matches
                             if m[2] == max_cnt and max_cnt > 0]
-        # self.logger.info("interrog matches: {}".format(interrog_matches))
+        self.logger.debug("interrog matches: {}".format(interrog_matches))
         if len(interrog_matches) > 0:
             train_ents = interrog_matches
         else:
@@ -102,15 +102,15 @@ class EntityWrapper:
         matched_labels = self.find_matches(train_ents, test_match)
 
         if len(matched_labels) > 0:
-            # self.logger.info("entity matches: {} ({} max matches)".format(
-            #   matched_labels, max_matches))
+            self.logger.debug("entity matches: {} ({} max matches)".format(
+              matched_labels, max_cnt))
             return matched_labels
         elif len(interrog_matches) > 0:
-            # self.logger.info("interrog matches: {}".format(
-            #   [(i, self.train_labels[i]) for i, _ in interrog_matches]))
+            self.logger.debug("interrog matches: {}".format(
+              [(i, self.train_labels[i]) for i, _ in interrog_matches]))
             return [(i, self.train_labels[i]) for i, _ in interrog_matches]
         else:
-            # self.logger.info("no entity matches")
+            self.logger.debug("no entity matches")
             return []
 
     def find_matches(self, train_ents, test_match):
@@ -118,7 +118,7 @@ class EntityWrapper:
         matched_labels = []
         for i, tr_ents in train_ents:
             num_matches = 0
-            # self.logger.info("train sample ents: {}".format(tr_ents))
+            self.logger.debug("train sample ents: {}".format(tr_ents))
             for ent in tr_ents:
                 tmp_ent = self.split_entities(ent)
                 for e in tmp_ent:

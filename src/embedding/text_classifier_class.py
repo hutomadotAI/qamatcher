@@ -126,9 +126,6 @@ class EmbeddingComparison:
             np.linalg.norm(train_x, axis=1)))
         # self.logger.info("cossim: {}".format(cossim))
         cossim = np.where(cossim < 0., 0., cossim)
-        # if subset_idx:
-        # self.logger.info("cossims: {}".format(cossim))
-        # self.logger.info("labels: {}".format(train_y))
         # most similar vector is the predicted class
         preds = np.argmax(cossim, 1)
         preds = [train_y[i] for i in preds]
