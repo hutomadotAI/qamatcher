@@ -216,3 +216,10 @@ class EntityWrapper:
         self.train_entities_q = d[0]
         self.train_entities_a = d[1]
         self.train_labels = d[2]
+
+    def match_custom_entities(self, q, entities):
+        for key, val in entities.items():
+            if key in q:
+                if len(val) == 1:
+                    q = q.replace(key, '@{' + key + '}')
+        return q

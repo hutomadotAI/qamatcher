@@ -1,5 +1,6 @@
 import logging
 import dill
+import re
 
 
 class StringMatchException(Exception):
@@ -14,6 +15,7 @@ class StringMatch:
         self.entity_wrapper = entity_wrapper
         self.stopword_size = 'small'
         self.filter_entities = 'False'
+        self.p = re.compile('@{.*}')
 
     def load_train_data(self, file_path):
         with file_path.open('rb') as f:
@@ -49,12 +51,16 @@ class StringMatch:
             q, filter_ents=self.filter_entities, sw_size=self.stopword_size)
 
         # search for intent-like entities first
-        if "@" in q:
+        cust_ents = self.p.findall(q)
+        match_probas = [0.0]
+        if len(cust_ents) > 0:
             match_probas = [
-                1.0 if "@" in t[0] else 0.0 for t in self.train_data
+                sum([1.0 for e in cust_ents if e in t[0]])
+                for t in self.train_data
             ]
+            match_probas /= float(len(cust_ents))
         # otherwise do string match
-        else:
+        if max(match_probas) == 0.:
             match_probas = [
                 self.__jaccard_similarity(tok_q, t)
                 if '@' not in ' '.join(t) else 0.0 for t in tok_train

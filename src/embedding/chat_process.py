@@ -52,6 +52,11 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         if msg.update_state:
             await self.setup_chat_session()
 
+        # substitute custom entities
+        msg.question = self.entity_wrapper.match_custom_entities(
+            msg.question, msg.entities
+        )
+
         # tokenize
         x_tokens_testset = [
             await self.entity_wrapper.tokenize(msg.question, sw_size='xlarge')
