@@ -65,7 +65,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
 
         # get string match
         sm_pred, sm_prob = await self.get_string_match(msg, msg_entities, x_tokens_testset)
-        if sm_prob > STRING_PROBA_THRES:
+        if sm_prob[0] > STRING_PROBA_THRES:
             yPred = sm_pred
             yProbs = sm_prob
         else:
@@ -100,28 +100,9 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
             msg.question)
         if len(sm_preds) > 1:
             sm_idxs, _ = zip(*sm_preds)
-            self.logger.debug("sm_idxs: {}".format(sm_idxs))
-            matched_answers = self.entity_wrapper.match_entities(
-                msg.question, msg_entities, subset_idxs=sm_idxs)
-            if len(matched_answers) == 1:
-                sm_pred = [matched_answers[0][1]]
-                sm_prob = [ENTITY_MATCH_PROBA]
-            elif len(matched_answers) > 1:
-                sm_idxs, _ = zip(*matched_answers)
-                if not any([
-                        self.string_match.train_data[i][0] == 'UNK'
-                        for i in sm_idxs
-                ]):
-                    sm_pred, sm_prob = self.cls.predict(
-                        x_tokens_testset, subset_idx=sm_idxs)
-                    sm_prob = [ENTITY_MATCH_PROBA + 0.1
-                               ]  # min(0.99, sm_prob[0])
-                else:
-                    sm_pred = ['']
-                    sm_prob = [0.0]
-            else:
-                sm_pred = ['']
-                sm_prob = [0.0]
+            sm_pred, sm_prob = self.cls.predict(
+                x_tokens_testset, subset_idx=sm_idxs)
+            sm_prob = [sm_proba]
         elif len(sm_preds) == 1:
             sm_idxs, sm_pred, sm_prob = [sm_preds[0][0]], [sm_preds[0][1]], [
                 sm_proba

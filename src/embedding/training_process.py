@@ -15,6 +15,7 @@ from embedding.text_classifier_class import EmbeddingComparison
 from embedding.word2vec_client import Word2VecClient
 from embedding.entity_wrapper import EntityWrapper
 from embedding.svc_config import SvcConfig
+from embedding.string_match import StringMatch
 
 MODEL_FILE = "model.pkl"
 DATA_FILE = "data.pkl"
@@ -50,6 +51,7 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
                                          self.aiohttp_client)
         self.entity_wrapper = EntityWrapper(config.er_server_url,
                                             self.aiohttp_client)
+        self.string_match = StringMatch(self.entity_wrapper)
         self.last_update_sent = None
         self.callback = None
 
