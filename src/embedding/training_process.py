@@ -18,6 +18,7 @@ from embedding.svc_config import SvcConfig
 
 MODEL_FILE = "model.pkl"
 DATA_FILE = "data.pkl"
+TRAIN_FILE = "train.pkl"
 
 
 def _get_logger():
@@ -92,6 +93,9 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
             tempdir_path = Path(tempdir)
             temp_model_file = tempdir_path / MODEL_FILE
             temp_data_file = tempdir_path / DATA_FILE
+            temp_train_file = tempdir_path / TRAIN_FILE
+
+            self.string_match.save_train_data(q_and_a, temp_train_file)
 
             self.logger.info("Extracting entities...")
             entities = []
@@ -134,8 +138,10 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
             self.logger.info("Moving training files to {}".format(msg.ai_path))
             model_file = msg.ai_path / MODEL_FILE
             data_file = msg.ai_path / DATA_FILE
+            train_file = msg.ai_path / TRAIN_FILE
             shutil.move(str(temp_model_file), str(model_file))
             shutil.move(str(temp_data_file), str(data_file))
+            shutil.move(str(temp_train_file), str(train_file))
 
         now = datetime.datetime.now()
         hash_value = now.strftime("%y%m%d.%H%M%S")
