@@ -16,6 +16,7 @@ class StringMatch:
     def load_train_data(self, file_path):
         with file_path.open('rb') as f:
             self.train_data = dill.load(f)
+        self.tok_train = []
 
     def save_train_data(self, data, file_name):
         if not isinstance(data, list):
