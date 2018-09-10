@@ -12,8 +12,6 @@ class StringMatch:
         self.train_data = None
         self.tok_train = []
         self.entity_wrapper = entity_wrapper
-        # self.stopword_size = 'small'
-        # self.filter_entities = 'False'
 
     def load_train_data(self, file_path):
         with file_path.open('rb') as f:
@@ -29,11 +27,6 @@ class StringMatch:
 
     async def tokenize_train_data(self):
         for q in self.train_data:
-            # tok = await self.entity_wrapper.tokenize(
-            #     q[0],
-            #     # filter_ents=self.filter_entities,
-            #     # sw_size=self.stopword_size
-            # )
             tok = q[0].lower().split()
             self.tok_train.append(tok)
 
@@ -48,8 +41,6 @@ class StringMatch:
         ]
         idx = subset_idx if subset_idx is not None else range(len(train_data))
         tok_q = q.lower().split()
-        # await self.entity_wrapper.tokenize(
-        #     q, filter_ents=self.filter_entities, sw_size=self.stopword_size)
 
         # search for intent-like entities first
         if "@" in q:
