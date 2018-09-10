@@ -67,10 +67,15 @@ async def mocked_chat(mocker, loop):
 
     chat.entity_wrapper.train_labels = ["You said London today",
                                             "You said Paris Fred Bloggs"]
+    chat.string_match.train_data = [
+        ("This is London today for entity match", "entity wins with London today"),
+        ("This is a perfect string match", "string wins"),
+        ("This is the question for embedding word1 word2", "embedding wins")]
     
     # mock out the load methods
     mocker.patch("embedding.text_classifier_class.EmbeddingComparison.load_model")
     mocker.patch.object(chat.entity_wrapper, "load_data")
+    mocker.patch.object(chat.string_match, "load_train_data")
 
     DUMMY_AIID = "123456"
     # Create a temp directory for AI path
