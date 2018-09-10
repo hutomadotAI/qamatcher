@@ -28,7 +28,7 @@ def _get_logger():
 
 
 class TrainEmbedMessage(aitp.TrainingMessage):
-    """Message class for training a SVCLASSIFIER"""
+    """Message class for training a QA-Matcher"""
 
     def __init__(self, ai_path, ai_id, max_training_mins: int):
         super().__init__(ai_path, ai_id, max_training_mins)
@@ -100,12 +100,14 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
             self.string_match.save_train_data(q_and_a, temp_train_file)
 
             self.logger.info("Extracting entities...")
-            entities = []
-            for question in x:
-                entity = await self.entity_wrapper.extract_entities(question)
-                entities.append(entity)
+            q_entities, a_entities = [], []
+            for question, answer in q_and_a:
+                q_entity = await self.entity_wrapper.extract_entities(question)
+                a_entity = await self.entity_wrapper.extract_entities(answer)
+                q_entities.append(q_entity)
+                a_entities.append(a_entity)
                 self.report_progress(0.1)
-            self.entity_wrapper.save_data(temp_data_file, entities, y)
+            self.entity_wrapper.save_data(temp_data_file, q_entities, a_entities, y)
             self.report_progress(0.2)
 
             self.logger.info(
@@ -113,19 +115,25 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
 
             x_tokens = []
             for question in x:
-                tokens = await self.entity_wrapper.tokenize(question)
+                tokens = await self.entity_wrapper.tokenize(question, sw_size='xlarge')
                 x_tokens.append(tokens)
-                self.logger.info("tokens: {}".format((question, tokens)))
                 self.report_progress(0.3)
 
             x_tokens_set = list(set([w for l in x_tokens for w in l]))
+
+            # find unknown words to word-embedding and get rid of them
+            unk_words = await self.w2v_client.get_unknown_words(x_tokens_set)
+            self.logger.info("unknown words: {}".format(unk_words))
+            x_tokens_set = [w for w in x_tokens_set if w not in unk_words]
+            x_tokens = [[w for w in s if w not in unk_words] for s in x_tokens]
+            if not x_tokens_set:
+                x_tokens_set = ['UNK']
+            x_tokens = [l if len(l) > 0 else ['UNK'] for l in x_tokens]
+            for question, tokens in zip(x, x_tokens):
+                self.logger.info("tokens: {}".format((question, tokens)))
             self.report_progress(0.4)
 
-            words = {}
-            for l in x_tokens_set:
-                words[l] = None
-
-            vecs = await self.get_vectors(list(words.keys()))
+            vecs = await self.get_vectors(x_tokens_set)
             self.report_progress(0.6)
 
             cls = EmbeddingComparison(w2v=vecs)

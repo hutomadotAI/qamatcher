@@ -89,7 +89,7 @@ class EmbeddingComparison:
         return -10.5 * probas / (-probas - 9.5)
 
     def downscale_probas(self, probas):
-        k = 0.2
+        k = 0.3  # 0.2
         return k * probas / (k - probas + 1.)
 
     def update_w2v(self, dic):
@@ -112,6 +112,7 @@ class EmbeddingComparison:
 
     def predict(self, X, scale_probas=False, subset_idx=None):
         if subset_idx:
+            # self.logger.info("X_tfidf: {} y: {}".format(self.X_tfidf.shape, self.y.shape))
             train_x = self.X_tfidf[np.array(subset_idx), :]
             train_y = self.y[np.array(subset_idx)]
         else:
@@ -120,12 +121,11 @@ class EmbeddingComparison:
         target_tfidf = self.vectorizer.transform(X)
         target_tfidf = target_tfidf - self.pca.components_[0]
         # compute cosine similarity
-        cossim = np.dot(target_tfidf, train_x.T) / (
-            np.outer(np.linalg.norm(target_tfidf, axis=1), np.linalg.norm(train_x, axis=1)))
+        cossim = np.dot(target_tfidf, train_x.T) / (np.outer(
+            np.linalg.norm(target_tfidf, axis=1),
+            np.linalg.norm(train_x, axis=1)))
         # self.logger.info("cossim: {}".format(cossim))
         cossim = np.where(cossim < 0., 0., cossim)
-        if subset_idx:
-            self.logger.info("cossims: {}".format(cossim))
         # most similar vector is the predicted class
         preds = np.argmax(cossim, 1)
         preds = [train_y[i] for i in preds]
@@ -136,8 +136,10 @@ class EmbeddingComparison:
         self.__logger.debug("Saving model to {}".format(file_path))
 
         with file_path.open('wb') as f:
-            dill.dump([self.X_tfidf, self.y, self.pca, self.classes,
-                       self.vectorizer.word2weight, self.w2v], f)  # , self.X
+            dill.dump([
+                self.X_tfidf, self.y, self.pca, self.classes,
+                self.vectorizer.word2weight, self.w2v
+            ], f)  # , self.X
 
     def load_model(self, file_path: Path):
         self.__logger.debug("Loading model from {}".format(file_path))

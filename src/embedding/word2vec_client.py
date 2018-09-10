@@ -11,10 +11,10 @@ class Word2VecClient():
         self.service_url = service_url
         self.client_session = client_session
 
-    async def w2v_call(self, payload):
+    async def w2v_call(self, payload, endpoint='words'):
         try:
             async with self.client_session.post(
-                    self.service_url + '/words', json=payload) as resp:
+                    self.service_url + "/" + endpoint, json=payload) as resp:
                 status = resp.status
                 if status != 200:
                     raise Word2VecError(
@@ -28,6 +28,15 @@ class Word2VecClient():
         except (aiohttp.client_exceptions.ClientConnectorError,
                 aiohttp.client_exceptions.ContentTypeError) as exc:
             raise Word2VecError("aiohttp error", exc)
+
+    async def get_unknown_words(self, words):
+        word_list = [word for word in words]
+        payload = {'words': word_list}
+
+        response = await self.w2v_call(payload, endpoint='unk_words')
+
+        unk_words = response['unk_words']
+        return unk_words
 
     async def get_vectors_for_words(self, words):
         word_list = [word for word in words]
