@@ -15,9 +15,11 @@ from embedding.text_classifier_class import EmbeddingComparison
 from embedding.word2vec_client import Word2VecClient
 from embedding.entity_wrapper import EntityWrapper
 from embedding.svc_config import SvcConfig
+from embedding.string_match import StringMatch
 
 MODEL_FILE = "model.pkl"
 DATA_FILE = "data.pkl"
+TRAIN_FILE = "train.pkl"
 
 
 def _get_logger():
@@ -49,6 +51,7 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
                                          self.aiohttp_client)
         self.entity_wrapper = EntityWrapper(config.er_server_url,
                                             self.aiohttp_client)
+        self.string_match = StringMatch(self.entity_wrapper)
         self.last_update_sent = None
         self.callback = None
 
@@ -92,6 +95,9 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
             tempdir_path = Path(tempdir)
             temp_model_file = tempdir_path / MODEL_FILE
             temp_data_file = tempdir_path / DATA_FILE
+            temp_train_file = tempdir_path / TRAIN_FILE
+
+            self.string_match.save_train_data(q_and_a, temp_train_file)
 
             self.logger.info("Extracting entities...")
             entities = []
@@ -134,8 +140,10 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
             self.logger.info("Moving training files to {}".format(msg.ai_path))
             model_file = msg.ai_path / MODEL_FILE
             data_file = msg.ai_path / DATA_FILE
+            train_file = msg.ai_path / TRAIN_FILE
             shutil.move(str(temp_model_file), str(model_file))
             shutil.move(str(temp_data_file), str(data_file))
+            shutil.move(str(temp_train_file), str(train_file))
 
         now = datetime.datetime.now()
         hash_value = now.strftime("%y%m%d.%H%M%S")
