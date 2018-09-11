@@ -222,4 +222,5 @@ class EntityWrapper:
             if key in q:
                 if len(val) == 1:
                     q = q.replace(key, '@{' + key + '}')
+        self.logger.info("replacing custom_entities: {}".format(q))
         return q
