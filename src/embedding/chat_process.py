@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-
+import time
 import aiohttp
 
 import ai_training.chat_process as ait_c
@@ -53,22 +53,30 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
             await self.setup_chat_session()
 
         # tokenize
+        t_start = time.time()
         x_tokens_testset = [
             await self.entity_wrapper.tokenize(msg.question, sw_size='xlarge')
         ]
         self.logger.debug("x_tokens_testset: {}".format(x_tokens_testset))
         self.logger.debug("x_tokens_testset: {}".format(
             len(x_tokens_testset[0])))
+        self.logger.debug("tokenizing: {}s".format(time.time() - t_start))
 
         # get question entities
+        t_start = time.time()
         msg_entities = await self.entity_wrapper.extract_entities(msg.question)
         self.logger.debug("msg_entities: {}".format(msg_entities))
+        self.logger.debug("msg_entities: {}s".format(time.time() - t_start))
 
         # get string match
+        t_start = time.time()
         sm_pred, sm_prob = await self.get_string_match(msg, msg_entities, x_tokens_testset)
+        self.logger.debug("string_match: {}s".format(time.time() - t_start))
 
         # entity matcher
+        t_start = time.time()
         er_pred, er_prob = await self.get_entity_match(msg, msg_entities, x_tokens_testset)
+        self.logger.debug("entity_match: {}s".format(time.time() - t_start))
 
         # if SM proba larger take that
         if sm_prob[0] > er_prob[0] and sm_prob[0] > STRING_PROBA_THRES:
@@ -80,8 +88,10 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
             self.logger.info("er wins: {}".format(y_pred))
         # if both ER and SM fail completely - EMB to the rescue!
         elif x_tokens_testset[0][0] != 'UNK':
+            t_start = time.time()
             y_pred, y_prob = await self.get_embedding_match(msg, msg_entities, x_tokens_testset)
             self.logger.info("default emb: {}".format(y_pred))
+            self.logger.debug("embedding: {}s".format(time.time() - t_start))
         else:
             y_pred = [""]
             y_prob = [0.0]
@@ -178,4 +188,3 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         self.cls.load_model(ai_path / MODEL_FILE)
         self.entity_wrapper.load_data(ai_path / DATA_FILE)
         self.string_match.load_train_data(ai_path / TRAIN_FILE)
-        await self.string_match.tokenize_train_data()
