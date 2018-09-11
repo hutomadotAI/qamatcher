@@ -11,7 +11,7 @@ class StringMatch:
     def __init__(self, entity_wrapper):
         self.logger = logging.getLogger('string_match')
         self.train_data = None
-        self.tok_train = []
+        self.tok_train = None
         self.entity_wrapper = entity_wrapper
         self.stopword_size = 'small'
         self.filter_entities = 'False'
@@ -19,7 +19,9 @@ class StringMatch:
 
     def load_train_data(self, file_path):
         with file_path.open('rb') as f:
-            self.train_data = dill.load(f)
+            tmp = dill.load(f)
+        self.train_data = tmp[0]
+        self.tok_train = tmp[1]
 
     def save_train_data(self, data, file_name):
         if not isinstance(data, list):
@@ -28,14 +30,6 @@ class StringMatch:
         self.logger.info('saving training file to {}'.format(file_name))
         with open(file_name, 'wb') as f:
             dill.dump(data, f)
-
-    async def tokenize_train_data(self):
-        for q in self.train_data:
-            tok = await self.entity_wrapper.tokenize(
-                q[0],
-                filter_ents=self.filter_entities,
-                sw_size=self.stopword_size)
-            self.tok_train.append(tok)
 
     async def get_string_match(self, q, subset_idx=None,
                                all_larger_zero=False):
@@ -62,8 +56,7 @@ class StringMatch:
         # otherwise do string match
         if max(match_probas) == 0.:
             match_probas = [
-                self.__jaccard_similarity(tok_q, t)
-                if '@' not in ' '.join(t) else 0.0 for t in tok_train
+                self.__jaccard_similarity(tok_q, t) for t in tok_train
             ]
 
         self.logger.info("match_probas: {}".format(match_probas))

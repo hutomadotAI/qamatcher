@@ -119,11 +119,8 @@ class EntityWrapper:
         for i, tr_ents in train_ents:
             num_matches = 0
             self.logger.debug("train sample ents: {}".format(tr_ents))
-            for ent in tr_ents:
-                tmp_ent = self.split_entities(ent)
-                for e in tmp_ent:
-                    if e not in ['the'] and e in test_match:
-                        num_matches += 1
+            num_matches += sum(1 if e not in ['the'] and e in test_match else 0
+                               for ent in tr_ents for e in self.split_entities(ent))
             if num_matches > max_matches:
                 max_matches = num_matches
                 matched_labels = [(i, self.train_labels[i])]

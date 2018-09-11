@@ -97,8 +97,6 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
             temp_data_file = tempdir_path / DATA_FILE
             temp_train_file = tempdir_path / TRAIN_FILE
 
-            self.string_match.save_train_data(q_and_a, temp_train_file)
-
             self.logger.info("Extracting entities...")
             q_entities, a_entities = [], []
             for question, answer in q_and_a:
@@ -114,10 +112,16 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
                 "Entities saved to {}, tokenizing...".format(temp_data_file))
 
             x_tokens = []
+            x_tokens_save = []
             for question in x:
                 tokens = await self.entity_wrapper.tokenize(question, sw_size='xlarge')
                 x_tokens.append(tokens)
+                tokens = await self.entity_wrapper.tokenize(question,
+                                                            sw_size='small',
+                                                            filter_ents='False')
+                x_tokens_save.append(tokens)
                 self.report_progress(0.3)
+            self.string_match.save_train_data([q_and_a, x_tokens_save], temp_train_file)
 
             x_tokens_set = list(set([w for l in x_tokens for w in l]))
 
