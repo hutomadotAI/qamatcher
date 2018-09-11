@@ -99,7 +99,6 @@ async def mocked_chat(mocker, loop):
         ("This is London today for entity match", "entity wins with London today"),
         ("This is a perfect string match", "string wins"),
         ("This is the question for embedding word1 word2", "embedding wins")]
-
     # mock out the load methods
     mocker.patch("embedding.text_classifier_class.EmbeddingComparison.load_model")
     mocker.patch.object(chat.entity_wrapper, "load_data")
