@@ -132,7 +132,7 @@ async def test_chat_request_string_match(mocker, mocked_chat):
     mocker.spy(mocked_chat.entity_wrapper, "match_entities")
 
     msg = ait_c.ChatRequestMessage("This is a perfect string match",
-                                   None, None, update_state=True)
+                                   None, None, update_state=True, entities=None)
     response = await mocked_chat.chat_request(msg)
     assert response.answer == "string wins"
     print(response.score)
@@ -147,7 +147,7 @@ async def test_chat_request_entity_match(mocker, mocked_chat):
     mocker.spy(mocked_chat.entity_wrapper, "match_entities")
 
     msg = ait_c.ChatRequestMessage("This should give an entity match for London and today",
-                                   None, None, update_state=True)
+                                   None, None, update_state=True, entities=None)
     response = await mocked_chat.chat_request(msg)
     assert response.answer == "entity wins with London today"
     assert response.score == score
@@ -164,7 +164,7 @@ async def test_chat_request_embedding_match(mocker, mocked_chat):
         ["embedding wins"], [1.0])
 
     msg = ait_c.ChatRequestMessage("This should match with word1 word2",
-                                   None, None, update_state=True)
+                                   None, None, update_state=True, entities=None)
     response = await mocked_chat.chat_request(msg)
     assert response.answer == "embedding wins"
     assert response.score == score
@@ -177,7 +177,7 @@ async def test_chat_request_no_match(mocker, mocked_chat):
     score = 0.0
     mocker.spy(mocked_chat.entity_wrapper, "match_entities")
 
-    msg = ait_c.ChatRequestMessage("How are you?", None, None, update_state=True)
+    msg = ait_c.ChatRequestMessage("How are you?", None, None, update_state=True, entities=None)
     response = await mocked_chat.chat_request(msg)
     assert response.answer == ""
     assert response.score == score

@@ -118,10 +118,10 @@ def load_svm_config_from_environment():
     return config
 
 
-def init_aiohttp(app, config=None):
+def init_aiohttp(app, loop, config=None):
     """Initialize aiohttp"""
     ai_provider = EmbedingAiProvider(config)
-    ait.initialize_ai_training_http(app, ai_provider)
+    ait.initialize_ai_training_http(app, ai_provider, loop)
 
 
 LOGGING_CONFIG_TEXT = """
@@ -160,8 +160,8 @@ def main():
     logging.config.dictConfig(logging_config)
 
     loop = asyncio.get_event_loop()
-    app = web.Application(loop=loop)
-    init_aiohttp(app, load_svm_config_from_environment())
+    app = web.Application()
+    init_aiohttp(app, loop, load_svm_config_from_environment())
 
     web.run_app(app, port=SvcConfig.get_instance().server_port)
 
