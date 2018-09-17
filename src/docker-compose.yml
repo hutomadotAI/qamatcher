@@ -23,7 +23,7 @@ services:
     ports:
       - 10003:9095
     environment:
-    - ERS_MINIMAL_SERVER=1
+    - ERS_MINIMAL_SERVER=0
 
   ai-embedding:
     build:
