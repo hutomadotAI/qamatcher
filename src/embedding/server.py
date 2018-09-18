@@ -136,12 +136,12 @@ formatters:
 handlers:
   console:
     class: logging.StreamHandler
-    level: INFO
+    level: DEBUG
     stream: ext://sys.stdout
     formatter: default
   elastic:
     class: hu_logging.HuLogHandler
-    level: INFO
+    level: DEBUG
     log_path: /tmp/hu_log
     log_tag: EMB
     es_log_index: ai-embedding-v1

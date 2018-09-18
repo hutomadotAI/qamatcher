@@ -141,7 +141,7 @@ class EntityWrapper:
         match = 0
         match += int(self.check_who_questions(test_match, ents))
         match += int(self.check_for_person(test_match, ents))
-        match += int(self.check_for_custom_entity(test_match, ents))
+        # match += int(self.check_for_custom_entity(test_match, ents))
         match += int(self.check_who_questions_inv(test_match, ents))
         # match += int(self.check_what_questions(test_match, ents))
         return match
@@ -193,7 +193,7 @@ class EntityWrapper:
     def check_for_custom_entity(self, test_match, ents):
         ents_msg, ents_q, ents_a = ents
         cust_ents = [
-            e['value'] for e in ents_msg if e['category'].startswith("@")
+            e['value'] for e in ents_msg if e['category'].startswith("@{")
         ]
         if len(cust_ents) > 0:
             return any([e['value'] in cust_ents for e in ents_a])
@@ -215,9 +215,15 @@ class EntityWrapper:
         self.train_labels = d[2]
 
     def match_custom_entities(self, q, entities):
-        for key, val in entities.items():
-            if key in q:
-                if len(val) == 1:
-                    q = q.replace(key, '@{' + key + '}')
-        self.logger.info("replacing custom_entities: {}".format(q))
-        return q
+        if entities is None:
+            return q
+        elif len(entities) > 1:
+            return q
+        else:
+            for key, val in entities.items():
+                if key in q.lower():
+                    if len(val) == 1:
+                        w = q.lower().find(key)
+                        q = q[:w] + '@{' + val[0] + q[w+len(key):]
+            self.logger.info("replacing custom_entities: {}".format(q))
+            return q

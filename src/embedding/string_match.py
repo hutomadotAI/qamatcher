@@ -15,7 +15,7 @@ class StringMatch:
         self.entity_wrapper = entity_wrapper
         self.stopword_size = 'small'
         self.filter_entities = 'False'
-        self.p = re.compile('@{.*}')
+        self.p = re.compile('@{')
 
     def load_train_data(self, file_path):
         with file_path.open('rb') as f:
@@ -49,14 +49,16 @@ class StringMatch:
         match_probas = [0.0]
         if len(cust_ents) > 0:
             match_probas = [
-                sum([1.0 for e in cust_ents if e in t[0]])
+                sum([1.0 / float(len(cust_ents)) for e in cust_ents if e in t[0]])
                 for t in self.train_data
             ]
-            match_probas /= float(len(cust_ents))
         # otherwise do string match
-        if max(match_probas) == 0.:
+        elif max(match_probas) == 0.:
+            self.logger.debug("cust ent: {}".format([bool(self.p.search(' '.join(t))) for t in tok_train]))
             match_probas = [
-                self.__jaccard_similarity(tok_q, t) for t in tok_train
+                self.__jaccard_similarity(tok_q, t)
+                # if not bool(self.p.search(' '.join(t))) else 0.0
+                for t in tok_train
             ]
 
         self.logger.info("match_probas: {}".format(match_probas))
@@ -67,6 +69,10 @@ class StringMatch:
             def f(a, b): return a == b
         preds = [(idx[i], train_data[i][1]) for i, p in enumerate(match_probas)
                  if f(p, max_proba)]
+
+        # if all found matches have the same answer just pick first one
+        if len(set([p[1] for p in preds])) == 1:
+            preds = [preds[0]]
         self.logger.info("string_match: {} - {}".format(max_proba, preds))
         return max_proba, preds
 
