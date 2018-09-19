@@ -12,16 +12,17 @@ class StringMatch:
         self.logger = logging.getLogger('string_match')
         self.train_data = None
         self.tok_train = None
+        self.cust_ents_train = None
         self.entity_wrapper = entity_wrapper
         self.stopword_size = 'small'
         self.filter_entities = 'False'
-        self.p = re.compile(r'@{.*}@')
 
     def load_train_data(self, file_path):
         with file_path.open('rb') as f:
             tmp = dill.load(f)
         self.train_data = tmp[0]
         self.tok_train = tmp[1]
+        self.cust_ents_train = tmp[2]
 
     def save_train_data(self, data, file_name):
         if not isinstance(data, list):
@@ -45,13 +46,11 @@ class StringMatch:
             q, filter_ents=self.filter_entities, sw_size=self.stopword_size)
 
         match_probas = []
-        for t, t_tok in zip(self.train_data, tok_train):
-            self.logger.debug("t: {}".format(t))
-            train_sample_ents = self.p.findall(t[0])
-            self.logger.debug("train_ents: {}".format(train_sample_ents))
+        for t_cust_ents, t_tok in zip(self.cust_ents_train, tok_train):
+            self.logger.debug("t_cust_ents: {}".format(t_cust_ents))
             if entities:
                 matching_ents = {k: e for k, v in entities.items()
-                                 for e in v if '@{'+e+'}@' in train_sample_ents}
+                                 for e in v if e in t_cust_ents}
             else:
                 matching_ents = {}
             self.logger.debug("matching_ents: {}".format(matching_ents))
@@ -59,7 +58,7 @@ class StringMatch:
                 subst_query = q
                 for k, e in matching_ents.items():
                     w = q.lower().find(k)
-                    subst_query = subst_query[:w] + '@{' + e + '}@ ' + subst_query[w+len(k):]
+                    subst_query = subst_query[:w] + e + subst_query[w+len(k):]
                 tok_subst_q = await self.entity_wrapper.tokenize(
                     subst_query, filter_ents=self.filter_entities, sw_size=self.stopword_size)
                 self.logger.debug("subst_query: {}".format(subst_query))
