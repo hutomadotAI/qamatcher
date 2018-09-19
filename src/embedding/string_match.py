@@ -15,7 +15,7 @@ class StringMatch:
         self.entity_wrapper = entity_wrapper
         self.stopword_size = 'small'
         self.filter_entities = 'False'
-        self.p = re.compile('@{')
+        self.p = re.compile(r'@{\w*')
 
     def load_train_data(self, file_path):
         with file_path.open('rb') as f:
@@ -32,7 +32,7 @@ class StringMatch:
             dill.dump(data, f)
 
     async def get_string_match(self, q, subset_idx=None,
-                               all_larger_zero=False):
+                               all_larger_zero=False, entities=None):
         self.logger.info("searching for word matches")
         tok_train = self.tok_train if subset_idx is None else [
             self.tok_train[i] for i in subset_idx
@@ -44,22 +44,27 @@ class StringMatch:
         tok_q = await self.entity_wrapper.tokenize(
             q, filter_ents=self.filter_entities, sw_size=self.stopword_size)
 
-        # search for intent-like entities first
-        cust_ents = self.p.findall(q)
-        match_probas = [0.0]
-        if len(cust_ents) > 0:
-            match_probas = [
-                sum([1.0 / float(len(cust_ents)) for e in cust_ents if e in t[0]])
-                for t in self.train_data
-            ]
-        # otherwise do string match
-        elif max(match_probas) == 0.:
-            self.logger.debug("cust ent: {}".format([bool(self.p.search(' '.join(t))) for t in tok_train]))
-            match_probas = [
-                self.__jaccard_similarity(tok_q, t)
-                # if not bool(self.p.search(' '.join(t))) else 0.0
-                for t in tok_train
-            ]
+        match_probas = []
+        for t, t_tok in zip(self.train_data, tok_train):
+            self.logger.debug("t: {}".format(t))
+            train_sample_ents = self.p.findall(t[0])
+            self.logger.debug("train_ents: {}".format(train_sample_ents))
+            if entities:
+                matching_ents = {k: e for k, v in entities.items()
+                                 for e in v if '@{'+e in train_sample_ents}
+            else:
+                matching_ents = {}
+            self.logger.debug("matching_ents: {}".format(matching_ents))
+            if len(matching_ents) > 0:
+                subst_query = q
+                for k, e in matching_ents.items():
+                    subst_query = subst_query.replace(k, '@{'+e)
+                tok_subst_q = await self.entity_wrapper.tokenize(
+                    subst_query, filter_ents=self.filter_entities, sw_size=self.stopword_size)
+                self.logger.debug("subst_query: {}".format(subst_query))
+                match_probas.append(self.__jaccard_similarity(tok_subst_q, t_tok))
+            else:
+                match_probas.append(self.__jaccard_similarity(tok_q, t_tok))
 
         self.logger.info("match_probas: {}".format(match_probas))
         max_proba = max(match_probas)

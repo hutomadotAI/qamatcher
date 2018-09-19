@@ -53,9 +53,9 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
             await self.setup_chat_session()
         # substitute custom entities
         self.logger.debug("msg: {}".format(msg))
-        msg.question = self.entity_wrapper.match_custom_entities(
-            msg.question, msg.entities
-        )
+        # msg.question = self.entity_wrapper.match_custom_entities(
+        #     msg.question, msg.entities
+        # )
 
         # tokenize
         t_start = time.time()
@@ -75,7 +75,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
 
         # get string match
         t_start = time.time()
-        sm_pred, sm_prob = await self.get_string_match(msg, msg_entities, x_tokens_testset)
+        sm_pred, sm_prob = await self.get_string_match(msg, msg_entities, x_tokens_testset, msg.entities)
         self.logger.debug("string_match: {}s".format(time.time() - t_start))
 
         # entity matcher
@@ -149,10 +149,10 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
             er_pred, er_prob = [''], [0.0]
         return er_pred, er_prob
 
-    async def get_string_match(self, msg, msg_entities, x_tokens_testset):
+    async def get_string_match(self, msg, msg_entities, x_tokens_testset, cust_ents):
         # get string match
         sm_proba, sm_preds = await self.string_match.get_string_match(
-            msg.question)
+            msg.question, entities=cust_ents)
         if len(sm_preds) > 1:
             sm_idxs, _ = zip(*sm_preds)
             self.logger.debug("sm_idxs: {}".format(sm_idxs))
