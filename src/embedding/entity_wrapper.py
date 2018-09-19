@@ -213,13 +213,3 @@ class EntityWrapper:
         self.train_entities_q = d[0]
         self.train_entities_a = d[1]
         self.train_labels = d[2]
-
-    def match_custom_entities(self, q, entities):
-        if entities is not None and len(entities) == 1:
-            for key, val in entities.items():
-                if key in q.lower():
-                    if len(val) == 1:
-                        w = q.lower().find(key)
-                        q = q[:w] + '@{' + val[0] + q[w+len(key):]
-            self.logger.info("replacing custom_entities: {}".format(q))
-        return q

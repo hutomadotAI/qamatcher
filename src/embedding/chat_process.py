@@ -51,11 +51,6 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         """Handle a chat request"""
         if msg.update_state:
             await self.setup_chat_session()
-        # substitute custom entities
-        self.logger.debug("msg: {}".format(msg))
-        # msg.question = self.entity_wrapper.match_custom_entities(
-        #     msg.question, msg.entities
-        # )
 
         # tokenize
         t_start = time.time()
