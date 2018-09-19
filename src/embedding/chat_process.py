@@ -70,7 +70,8 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
 
         # get string match
         t_start = time.time()
-        sm_pred, sm_prob = await self.get_string_match(msg, msg_entities, x_tokens_testset, msg.entities)
+        sm_pred, sm_prob = await self.get_string_match(
+            msg, msg_entities, x_tokens_testset, msg.entities)
         self.logger.debug("string_match: {}s".format(time.time() - t_start))
 
         # entity matcher
