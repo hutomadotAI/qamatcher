@@ -4,7 +4,7 @@ import datetime
 import shutil
 import tempfile
 from pathlib import Path
-
+import re
 import aiohttp
 
 import ai_training as ait
@@ -54,6 +54,7 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
         self.string_match = StringMatch(self.entity_wrapper)
         self.last_update_sent = None
         self.callback = None
+        self.regex_finder = re.compile(r'@{(.*?)}@')
 
     async def get_vectors(self, questions):
         word_dict = {}
@@ -112,16 +113,26 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
                 "Entities saved to {}, tokenizing...".format(temp_data_file))
 
             x_tokens = []
-            x_tokens_save = []
+            x_tokens_string_matcher = []
+            x_cust_entities = []
             for question in x:
+                # find custom entities
+                train_sample_ents = self.regex_finder.findall(question)
+                x_cust_entities.append(train_sample_ents)
+                # delete custom entity taggers
+                for e in train_sample_ents:
+                    question = question.replace('@{'+e+'}@', e)
+                # tokenize for embedding
                 tokens = await self.entity_wrapper.tokenize(question, sw_size='xlarge')
                 x_tokens.append(tokens)
+                # tokenize for string matcher
                 tokens = await self.entity_wrapper.tokenize(question,
                                                             sw_size='small',
                                                             filter_ents='False')
-                x_tokens_save.append(tokens)
+                x_tokens_string_matcher.append(tokens)
                 self.report_progress(0.3)
-            self.string_match.save_train_data([q_and_a, x_tokens_save], temp_train_file)
+            self.string_match.save_train_data([q_and_a, x_tokens_string_matcher, x_cust_entities],
+                                              temp_train_file)
 
             x_tokens_set = list(set([w for l in x_tokens for w in l]))
 

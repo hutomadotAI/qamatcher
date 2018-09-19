@@ -141,7 +141,6 @@ class EntityWrapper:
         match = 0
         match += int(self.check_who_questions(test_match, ents))
         match += int(self.check_for_person(test_match, ents))
-        match += int(self.check_for_custom_entity(test_match, ents))
         match += int(self.check_who_questions_inv(test_match, ents))
         # match += int(self.check_what_questions(test_match, ents))
         return match
@@ -187,16 +186,6 @@ class EntityWrapper:
         if len(person) > 0:
             return any(
                 [p in e['value'].lower() for e in ents_q for p in person])
-        else:
-            return False
-
-    def check_for_custom_entity(self, test_match, ents):
-        ents_msg, ents_q, ents_a = ents
-        cust_ents = [
-            e['value'] for e in ents_msg if e['category'].startswith("@")
-        ]
-        if len(cust_ents) > 0:
-            return any([e['value'] in cust_ents for e in ents_a])
         else:
             return False
 
