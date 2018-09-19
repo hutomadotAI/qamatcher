@@ -1,6 +1,5 @@
 import logging
 import dill
-import re
 
 
 class StringMatchException(Exception):
