@@ -14,7 +14,8 @@ async def mock_w2v_call(payload):
 
 async def mock_unk_words_w2v_call(payload):
     return {'unk_words':
-            ['this', 'be', 'question', 'for', 'embedding', 'shall', 'with', 'match', 'how', 'you']}
+            ['this', 'be', 'question', 'for', 'embedding',
+             'shall', 'with', 'match', 'how', 'you']}
 
 
 async def get_from_er_server(relative_url, params=None):
@@ -41,6 +42,8 @@ async def get_from_er_server(relative_url, params=None):
             return ["this", "shall", "match", "with", "word1", "word2"]
         elif params['q'] == "How are you?":
             return ["UNK"]
+        elif params['q'] == "This is a @{custom_ent match":
+            return ["this", "be", "@{custom_ent", "match"]
         else:
             return []
     else:
@@ -75,7 +78,7 @@ async def mocked_chat(mocker, loop):
             'start': 10,
             'end': 17
         }],
-        [], []]
+        [], [], []]
 
     chat.entity_wrapper.train_entities_a = [
         [{
@@ -89,20 +92,23 @@ async def mocked_chat(mocker, loop):
             'start': 10,
             'end': 17
         }],
-        [], []]
+        [], [], []]
 
     chat.entity_wrapper.train_labels = ["entity wins with London today",
                                         "string wins",
-                                        "embedding wins"]
+                                        "embedding wins",
+                                        "custom entity match"]
 
     chat.string_match.train_data = [
         ("This is London today for entity match", "entity wins with London today"),
         ("This is a perfect string match", "string wins"),
-        ("This is the question for embedding word1 word2", "embedding wins")]
+        ("This is the question for embedding word1 word2", "embedding wins"),
+        ("This is a @{custom_ent match", "custom entity match")]
     chat.string_match.tok_train = [
         ["this", "be", "london", "today", "for", "entity", "match"],
         ["this", "be", "perfect", "string", "match"],
-        ["this", "be", "question", "for", "embedding", "word1", "word2"]
+        ["this", "be", "question", "for", "embedding", "word1", "word2"],
+        ["this", "be", "@{custom_ent", "match"]
     ]
     # mock out the load methods
     mocker.patch("embedding.text_classifier_class.EmbeddingComparison.load_model")
@@ -184,3 +190,16 @@ async def test_chat_request_no_match(mocker, mocked_chat):
     assert response.topic_out is None
     assert response.history is None
     assert mocked_chat.entity_wrapper.match_entities.call_count == 2
+
+
+async def test_custom_entity_match(mocker, mocked_chat):
+    score = 1.0
+    msg = ait_c.ChatRequestMessage("This is a custom entity match",
+                                   None, None, update_state=True,
+                                   entities={"custom entity": ["custom_ent", "fake_tag"],
+                                             "fake entity value": ["fake_tag2"]})
+    response = await mocked_chat.chat_request(msg)
+    assert response.answer == "custom entity match"
+    assert response.score == score
+    assert response.topic_out is None
+    assert response.history is None
