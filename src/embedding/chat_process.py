@@ -133,7 +133,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
                  for i in er_idxs]):
                 er_pred, er_prob = self.cls.predict(
                     x_tokens_testset, subset_idx=er_idxs)
-                er_prob = [ENTITY_MATCH_PROBA]  # min(0.99, er_prob[0])
+                er_prob = [ENTITY_MATCH_PROBA]
 
                 self.logger.debug("er_pred: {} er_prob: {}".format(
                     er_pred, er_prob))
@@ -145,7 +145,6 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         return er_pred, er_prob
 
     async def get_string_match(self, msg, msg_entities, x_tokens_testset, cust_ents):
-        # get string match
         sm_proba, sm_preds = await self.string_match.get_string_match(
             msg.question, entities=cust_ents)
         if len(sm_preds) > 1:
@@ -157,7 +156,6 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
                 sm_pred = [matched_answers[0][1]]
                 sm_prob = [ENTITY_MATCH_PROBA]
             elif len(matched_answers) > 1:
-            # else:
                 sm_idxs, _ = zip(*matched_answers)
                 if not any([
                         self.string_match.train_data[i][0] == 'UNK'
@@ -165,29 +163,13 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
                 ]):
                     sm_pred, sm_prob = self.cls.predict(
                         x_tokens_testset, subset_idx=sm_idxs)
-                    sm_prob = [ENTITY_MATCH_PROBA + 0.1
-                               ]  # min(0.99, sm_prob[0])
+                    sm_prob = [ENTITY_MATCH_PROBA + 0.1]
                     self.logger.info("sm-emb: sm_pred: {} sm_prob: {}".format(
                         sm_pred[0], sm_prob[0]
                     ))
                 else:
                     sm_pred = ['']
                     sm_prob = [0.0]
-            # else:
-            #     if not any([
-            #             self.string_match.train_data[i][0] == 'UNK'
-            #             for i in sm_idxs
-            #     ]):
-            #         sm_pred, sm_prob = self.cls.predict(
-            #             x_tokens_testset, subset_idx=sm_idxs)
-            #         sm_prob = [ENTITY_MATCH_PROBA + 0.1
-            #                    ]  # min(0.99, sm_prob[0])
-            #         self.logger.info("sm-emb: sm_pred: {} sm_prob: {}".format(
-            #             sm_pred[0], sm_prob[0]
-            #         ))
-            #     else:
-            #         sm_pred = ['']
-            #         sm_prob = [0.0]
             else:
                 sm_pred = ['']
                 sm_prob = [0.0]
