@@ -54,7 +54,7 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
         self.string_match = StringMatch(self.entity_wrapper)
         self.last_update_sent = None
         self.callback = None
-        self.regex_finder = re.compile(r'@{(.*)}@')
+        self.regex_finder = re.compile(r'@{(.*?)}@')
 
     async def get_vectors(self, questions):
         word_dict = {}
@@ -120,9 +120,8 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
                 train_sample_ents = self.regex_finder.findall(question)
                 x_cust_entities.append(train_sample_ents)
                 # delete custom entity taggers
-                if train_sample_ents:
-                    question = question.replace('@{', '')
-                    question = question.replace('}@', '')
+                for e in train_sample_ents:
+                    question = question.replace('@{'+e+'}@', e)
                 # tokenize for embedding
                 tokens = await self.entity_wrapper.tokenize(question, sw_size='xlarge')
                 x_tokens.append(tokens)

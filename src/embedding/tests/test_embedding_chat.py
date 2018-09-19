@@ -103,7 +103,7 @@ async def mocked_chat(mocker, loop):
         ("This is London today for entity match", "entity wins with London today"),
         ("This is a perfect string match", "string wins"),
         ("This is the question for embedding word1 word2", "embedding wins"),
-        ("This is a @{custom_ent match", "custom entity match")]
+        ("This is a @{custom_ent}@ match", "custom entity match")]
     chat.string_match.tok_train = [
         ["this", "be", "london", "today", "for", "entity", "match"],
         ["this", "be", "perfect", "string", "match"],

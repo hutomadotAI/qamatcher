@@ -64,19 +64,19 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
 
         # get question entities
         t_start = time.time()
-        msg_entities = await self.entity_wrapper.extract_entities(msg.question)
-        self.logger.debug("msg_entities: {}".format(msg_entities))
-        self.logger.debug("msg_entities: {}s".format(time.time() - t_start))
+        msg_spacy_entities = await self.entity_wrapper.extract_entities(msg.question)
+        self.logger.debug("msg_spacy_entities: {}".format(msg_spacy_entities))
+        self.logger.debug("msg_spacy_entities: {}s".format(time.time() - t_start))
 
         # get string match
         t_start = time.time()
         sm_pred, sm_prob = await self.get_string_match(
-            msg, msg_entities, x_tokens_testset, msg.entities)
+            msg, msg_spacy_entities, x_tokens_testset, msg.entities)
         self.logger.debug("string_match: {}s".format(time.time() - t_start))
 
         # entity matcher
         t_start = time.time()
-        er_pred, er_prob = await self.get_entity_match(msg, msg_entities, x_tokens_testset)
+        er_pred, er_prob = await self.get_entity_match(msg, msg_spacy_entities, x_tokens_testset)
         self.logger.debug("entity_match: {}s".format(time.time() - t_start))
 
         # if SM proba larger take that
@@ -90,7 +90,8 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         # if both ER and SM fail completely - EMB to the rescue!
         elif x_tokens_testset[0][0] != 'UNK':
             t_start = time.time()
-            y_pred, y_prob = await self.get_embedding_match(msg, msg_entities, x_tokens_testset)
+            y_pred, y_prob = await self.get_embedding_match(
+                msg, msg_spacy_entities, x_tokens_testset)
             self.logger.info("default emb: {}".format(y_pred[0]))
             self.logger.debug("embedding: {}s".format(time.time() - t_start))
         else:
@@ -100,7 +101,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         resp = ait_c.ChatResponseMessage(msg, y_pred[0], float(y_prob[0]))
         return resp
 
-    async def get_embedding_match(self, msg, msg_entities, x_tokens_testset):
+    async def get_embedding_match(self, msg, msg_spacy_entities, x_tokens_testset):
         # get new word embeddings
         unique_tokens = list(set([w for l in x_tokens_testset for w in l]))
         unk_tokens = self.cls.get_unknown_words(unique_tokens)
@@ -121,9 +122,9 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         y_prob = [max(0., y_prob[0] - 0.15)]
         return y_pred, y_prob
 
-    async def get_entity_match(self, msg, msg_entities, x_tokens_testset):
+    async def get_entity_match(self, msg, msg_spacy_entities, x_tokens_testset):
         matched_answers = self.entity_wrapper.match_entities(
-            msg.question, msg_entities)
+            msg.question, msg_spacy_entities)
         if len(matched_answers) == 1:
             er_pred = [matched_answers[0][1]]
             er_prob = [ENTITY_MATCH_PROBA]
@@ -145,14 +146,14 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
             er_pred, er_prob = [''], [0.0]
         return er_pred, er_prob
 
-    async def get_string_match(self, msg, msg_entities, x_tokens_testset, cust_ents):
+    async def get_string_match(self, msg, msg_spacy_entities, x_tokens_testset, cust_ents):
         sm_proba, sm_preds = await self.string_match.get_string_match(
             msg.question, entities=cust_ents)
         if len(sm_preds) > 1:
             sm_idxs, _ = zip(*sm_preds)
             self.logger.debug("sm_idxs: {}".format(sm_idxs))
             matched_answers = self.entity_wrapper.match_entities(
-                msg.question, msg_entities, subset_idxs=sm_idxs)
+                msg.question, msg_spacy_entities, subset_idxs=sm_idxs)
             if len(matched_answers) == 1:
                 sm_pred = [matched_answers[0][1]]
                 sm_prob = [ENTITY_MATCH_PROBA]
