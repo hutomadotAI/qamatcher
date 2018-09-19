@@ -15,7 +15,7 @@ class StringMatch:
         self.entity_wrapper = entity_wrapper
         self.stopword_size = 'small'
         self.filter_entities = 'False'
-        self.p = re.compile(r'@{\w*')
+        self.p = re.compile(r'@{.*}@')
 
     def load_train_data(self, file_path):
         with file_path.open('rb') as f:
@@ -51,18 +51,21 @@ class StringMatch:
             self.logger.debug("train_ents: {}".format(train_sample_ents))
             if entities:
                 matching_ents = {k: e for k, v in entities.items()
-                                 for e in v if '@{'+e in train_sample_ents}
+                                 for e in v if '@{'+e+'}@' in train_sample_ents}
             else:
                 matching_ents = {}
             self.logger.debug("matching_ents: {}".format(matching_ents))
             if len(matching_ents) > 0:
                 subst_query = q
                 for k, e in matching_ents.items():
-                    subst_query = subst_query.replace(k, '@{'+e)
+                    w = q.lower().find(k)
+                    subst_query = subst_query[:w] + '@{' + e + '}@ ' + subst_query[w+len(k):]
                 tok_subst_q = await self.entity_wrapper.tokenize(
                     subst_query, filter_ents=self.filter_entities, sw_size=self.stopword_size)
                 self.logger.debug("subst_query: {}".format(subst_query))
-                match_probas.append(self.__jaccard_similarity(tok_subst_q, t_tok))
+                self.logger.debug("tok_subst_query: {}".format(tok_subst_q))
+                self.logger.debug("t_tok: {}".format(t_tok))
+                match_probas.append(min(self.__jaccard_similarity(tok_subst_q, t_tok) + 0.5, 1.0))
             else:
                 match_probas.append(self.__jaccard_similarity(tok_q, t_tok))
 
@@ -85,4 +88,5 @@ class StringMatch:
         a = set(list1)
         b = set(list2)
         c = a.intersection(b)
+        self.logger.debug("a: {} b: {} c: {}".format(a, b, c))
         return float(len(c)) / (len(a) + len(b) - len(c))
