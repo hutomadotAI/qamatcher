@@ -14,7 +14,12 @@ services:
       - 10002:9090
     environment:
     - W2V_SERVER_PORT=9090
-    - W2V_VECTOR_FILE=/datasets/glove.840B.300d.txt
+    - W2V_VECTOR_FILE_EN=/datasets/glove.840B.300d.txt
+    - W2V_VECTOR_FILE_ES=/datasets/wiki.es.vec
+    - W2V_VECTOR_FILE_FR=/datasets/wiki.fr.vec
+    - W2V_VECTOR_FILE_PT=/datasets/wiki.pt.vec
+    - W2V_VECTOR_FILE_IT=/datasets/wiki.it.vec
+    - W2V_VECTOR_FILE_NL=/datasets/wiki.nl.vec
   
   api-entity:
     build:
@@ -23,7 +28,7 @@ services:
     ports:
       - 10003:9095
     environment:
-    - ERS_MINIMAL_SERVER=1
+    - ERS_MINIMAL_SERVER=0
 
   ai-embedding:
     build:
