@@ -60,6 +60,7 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
         self.__config = config
         self.process_pool2 = None
         self.training_pool = None
+        self.logger = _get_logger()
 
     # other required methods in the ABC
     @property
@@ -74,6 +75,15 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
         """Initialize SVCLASS worker processes"""
         asyncio_loop = self.controller.asyncio_loop
         thread_pool_executor = self.controller.thread_pool_executor
+
+        # For training servers only, create storage directory if doesn't exist
+        if self.config.training_enabled:
+            training_root = pathlib.Path(self.config.training_data_root)
+            if not training_root.exists():
+                self.logger.warning("Directory %s doesn't exist, creating...",
+                                    training_root)
+                training_root.mkdir(parents=True, exist_ok=True)
+
         ai_list = await asyncio_loop.run_in_executor(
             thread_pool_executor, ait.find_training_from_directory,
             self.config.training_data_root)
