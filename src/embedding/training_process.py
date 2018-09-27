@@ -119,9 +119,6 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
                 # find custom entities
                 train_sample_ents = self.regex_finder.findall(question)
                 x_cust_entities.append(train_sample_ents)
-                # delete custom entity taggers
-                for e in train_sample_ents:
-                    question = question.replace('@{'+e+'}@', e)
                 # tokenize for embedding
                 tokens = await self.entity_wrapper.tokenize(question, sw_size='xlarge')
                 x_tokens.append(tokens)
