@@ -42,8 +42,8 @@ async def get_from_er_server(relative_url, params=None):
             return ["this", "shall", "match", "with", "word1", "word2"]
         elif params['q'] == "How are you?":
             return ["UNK"]
-        elif params['q'] == "This is a custom_ent match":
-            return ["this", "be", "custom_ent", "match"]
+        elif params['q'] == "This is a @{custom_ent}@ match":
+            return ["this", "be", "@{custom_ent}@", "match"]
         else:
             return []
     else:
@@ -108,7 +108,7 @@ async def mocked_chat(mocker, loop):
         ["this", "be", "london", "today", "for", "entity", "match"],
         ["this", "be", "perfect", "string", "match"],
         ["this", "be", "question", "for", "embedding", "word1", "word2"],
-        ["this", "be", "custom_ent", "match"]
+        ["this", "be", "@{custom_ent}@", "match"]
     ]
     chat.string_match.cust_ents_train = [
         [], [], [], ["custom_ent"]
