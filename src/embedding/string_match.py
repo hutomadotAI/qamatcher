@@ -56,16 +56,19 @@ class StringMatch:
             if len(matching_ents) > 0:
                 subst_query = q
                 for k, e in matching_ents.items():
-                    w = q.lower().find(k)
-                    subst_query = subst_query[:w] + e + subst_query[w+len(k):]
+                    w = subst_query.lower().find(k)
+                    subst_query = subst_query[:w] + '@{' + e + '}@' + subst_query[w+len(k):]
                 tok_subst_q = await self.entity_wrapper.tokenize(
                     subst_query, filter_ents=self.filter_entities, sw_size=self.stopword_size)
                 self.logger.debug("subst_query: {}".format(subst_query))
                 self.logger.debug("tok_subst_query: {}".format(tok_subst_q))
                 self.logger.debug("t_tok: {}".format(t_tok))
-                match_probas.append(min(self.__jaccard_similarity(tok_subst_q, t_tok) + 0.5, 1.0))
+                score = self.__jaccard_similarity(tok_subst_q, t_tok)
+                match_probas.append(min(score + 0.5 * (1 - score), 1.0))
             else:
-                match_probas.append(self.__jaccard_similarity(tok_q, t_tok))
+                score = self.__jaccard_similarity(tok_q, t_tok)
+                match_probas.append(score if len(t_cust_ents) == 0 else
+                                    score - 0.2*score)
 
         self.logger.info("match_probas: {}".format(match_probas))
         max_proba = max(match_probas)

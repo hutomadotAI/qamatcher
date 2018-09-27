@@ -42,8 +42,8 @@ async def get_from_er_server(relative_url, params=None):
             return ["this", "shall", "match", "with", "word1", "word2"]
         elif params['q'] == "How are you?":
             return ["UNK"]
-        elif params['q'] == "This is a custom_ent match":
-            return ["this", "be", "custom_ent", "match"]
+        elif params['q'] == "This is a @{custom_ent}@ match":
+            return ["this", "be", "@{custom_ent}@", "match"]
         else:
             return []
     else:
