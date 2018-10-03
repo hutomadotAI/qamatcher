@@ -65,7 +65,8 @@ class StringMatch:
                 self.logger.debug("t_tok: {}".format(t_tok))
                 score = self.__jaccard_similarity(tok_subst_q, t_tok)
                 self.logger.debug("raw score: {}".format(score))
-                match_probas.append(score + min(0.5 * (1 - score), 0.3))
+                match_probas.append(score + min(0.5 * (1 - score), 0.3) *
+                                    len(matching_ents) / len(t_cust_ents))
             else:
                 score = self.__jaccard_similarity(tok_q, t_tok)
                 self.logger.debug("raw score: {}".format(score))
