@@ -64,12 +64,12 @@ class StringMatch:
                 self.logger.debug("tok_subst_query: {}".format(tok_subst_q))
                 self.logger.debug("t_tok: {}".format(t_tok))
                 score = self.__jaccard_similarity(tok_subst_q, t_tok)
-                self.logger.debug("raw score: {}".format(score))
+                self.logger.debug("raw score: %f", score)
                 match_probas.append(score + min(0.5 * (1 - score), 0.3) *
                                     len(matching_ents) / len(t_cust_ents))
             else:
                 score = self.__jaccard_similarity(tok_q, t_tok)
-                self.logger.debug("raw score: {}".format(score))
+                self.logger.debug("raw score: %f", score)
                 match_probas.append(score if len(t_cust_ents) == 0 else
                                     score - 0.2*score)
 
