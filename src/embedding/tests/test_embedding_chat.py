@@ -110,6 +110,12 @@ async def mocked_chat(mocker, loop):
         ["this", "be", "question", "for", "embedding", "word1", "word2"],
         ["this", "be", "@{custom_ent}@", "match"]
     ]
+    chat.string_match.tok_train_no_sw = [
+        ["this", "be", "london", "today", "for", "entity", "match"],
+        ["this", "be", "perfect", "string", "match"],
+        ["this", "be", "question", "for", "embedding", "word1", "word2"],
+        ["this", "be", "@{custom_ent}@", "match"]
+    ]
     chat.string_match.cust_ents_train = [
         [], [], [], ["custom_ent"]
     ]
