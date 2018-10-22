@@ -146,7 +146,7 @@ formatters:
 handlers:
   console:
     class: logging.StreamHandler
-    level: INFO
+    level: DEBUG
     stream: ext://sys.stdout
     formatter: default
   elastic:

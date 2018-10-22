@@ -81,7 +81,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
 
         # if SM proba larger take that
         if sm_prob[0] > er_prob[0] and sm_prob[0] > STRING_PROBA_THRES:
-            y_pred, y_prob = sm_pred, sm_prob
+            y_pred, y_prob = sm_pred, [min(sm_prob[0], 1.0)]
             self.logger.info("sm wins: {}".format(y_pred))
         # otherwise take ER result if there is any
         elif er_prob[0] > 0.:

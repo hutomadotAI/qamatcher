@@ -114,6 +114,7 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
 
             x_tokens = []
             x_tokens_string_matcher = []
+            x_tokens_string_matcher_no_sw = []
             x_cust_entities = []
             for question in x:
                 # find custom entities
@@ -124,11 +125,17 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
                 x_tokens.append(tokens)
                 # tokenize for string matcher
                 tokens = await self.entity_wrapper.tokenize(question,
-                                                            sw_size='small',
+                                                            sw_size='large',
                                                             filter_ents='False')
+                # if tokens[0] == 'UNK':
+                tokens_no_sw = await self.entity_wrapper.tokenize(question,
+                                                                  sw_size='small',
+                                                                  filter_ents='False')
                 x_tokens_string_matcher.append(tokens)
+                x_tokens_string_matcher_no_sw.append(tokens_no_sw)
                 self.report_progress(0.3)
-            self.string_match.save_train_data([q_and_a, x_tokens_string_matcher, x_cust_entities],
+            self.string_match.save_train_data([q_and_a, x_tokens_string_matcher, x_cust_entities,
+                                               x_tokens_string_matcher_no_sw],
                                               temp_train_file)
 
             x_tokens_set = list(set([w for l in x_tokens for w in l]))
