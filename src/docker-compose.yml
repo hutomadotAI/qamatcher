@@ -38,5 +38,6 @@ services:
     - AI_TRAIN_CAPACITY=1
     - EMB_SERVER_PORT=9090
     # - W2V_SERVER_URL=http://ai-word2vec:9090
-#    - W2V_SERVER_URL=http://10.8.0.26:9090
-    - W2V_SERVER_URL=http://10.181.0.4:30100
+    - W2V_SERVER_URL=http://10.8.0.26:9090
+#    - W2V_SERVER_URL=http://10.181.0.4:30100
+    - EMB_SERVER_URL=http://10.8.0.26:8097

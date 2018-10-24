@@ -12,7 +12,7 @@ import ai_training.training_process as aitp
 
 from embedding.text_classifier_class import EmbeddingComparison
 
-from embedding.word2vec_client import Word2VecClient
+from embedding.embedding_client import EmbeddingClient
 from embedding.entity_wrapper import EntityWrapper
 from embedding.svc_config import SvcConfig
 from embedding.string_match import StringMatch
@@ -47,22 +47,14 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
 
         self.aiohttp_client = aiohttp_client_session
         config = SvcConfig.get_instance()
-        self.w2v_client = Word2VecClient(config.w2v_server_url,
-                                         self.aiohttp_client)
         self.entity_wrapper = EntityWrapper(config.er_server_url,
                                             self.aiohttp_client)
+        self.embedding_client = EmbeddingClient(config.emb_server_url,
+                                                self.aiohttp_client)
         self.string_match = StringMatch(self.entity_wrapper)
         self.last_update_sent = None
         self.callback = None
         self.regex_finder = re.compile(r'@{(.*?)}@')
-
-    async def get_vectors(self, questions):
-        word_dict = {}
-        for question in questions:
-            words = question.split(' ')
-            for word in words:
-                word_dict[word] = ""
-        return await self.w2v_client.get_vectors_for_words(word_dict)
 
     def report_progress(self, progress_value):
         now = datetime.datetime.utcnow()
@@ -112,17 +104,15 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
             self.logger.info(
                 "Entities saved to {}, tokenizing...".format(temp_data_file))
 
-            x_tokens = []
             x_tokens_string_matcher = []
             x_tokens_string_matcher_no_sw = []
             x_cust_entities = []
+            sen_emb = []
             for question in x:
                 # find custom entities
                 train_sample_ents = self.regex_finder.findall(question)
                 x_cust_entities.append(train_sample_ents)
-                # tokenize for embedding
-                tokens = await self.entity_wrapper.tokenize(question, sw_size='xlarge')
-                x_tokens.append(tokens)
+
                 # tokenize for string matcher
                 tokens = await self.entity_wrapper.tokenize(question,
                                                             sw_size='large',
@@ -133,30 +123,18 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
                 x_tokens_string_matcher.append(tokens)
                 x_tokens_string_matcher_no_sw.append(tokens_no_sw)
                 self.report_progress(0.3)
+
+                # generate sentence embeddings
+                q_emb = self.embedding_client.get_sentence_embedding(question)
+                sen_emb.append(q_emb)
+            self.report_progress(0.4)
+
             self.string_match.save_train_data([q_and_a, x_tokens_string_matcher, x_cust_entities,
                                                x_tokens_string_matcher_no_sw],
                                               temp_train_file)
 
-            x_tokens_set = list(set([w for l in x_tokens for w in l]))
-
-            # find unknown words to word-embedding and get rid of them
-            unk_words = await self.w2v_client.get_unknown_words(x_tokens_set)
-            self.logger.info("unknown words: {}".format(unk_words))
-            x_tokens_set = [w for w in x_tokens_set if w not in unk_words]
-            x_tokens = [[w for w in s if w not in unk_words] for s in x_tokens]
-            if not x_tokens_set:
-                x_tokens_set = ['UNK']
-            x_tokens = [l if len(l) > 0 else ['UNK'] for l in x_tokens]
-            for question, tokens in zip(x, x_tokens):
-                self.logger.info("tokens: {}".format((question, tokens)))
-            self.report_progress(0.4)
-
-            vecs = await self.get_vectors(x_tokens_set)
-            self.report_progress(0.6)
-
-            cls = EmbeddingComparison(w2v=vecs)
-            self.logger.info("Fitting...")
-            cls.fit(x_tokens, y)
+            cls = EmbeddingComparison(sen_emb=sen_emb, y=y)
+            # cls.fit()
             self.report_progress(0.8)
 
             cls.save_model(temp_model_file)
