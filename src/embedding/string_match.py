@@ -48,7 +48,6 @@ class StringMatch:
         idx = subset_idx if subset_idx is not None else range(len(train_data))
         tok_q = await self.entity_wrapper.tokenize(
             q, filter_ents=self.filter_entities, sw_size=self.stopword_size)
-
         tok_q_no_sw = await self.entity_wrapper.tokenize(
             q, sw_size='small', filter_ents='False')
 
