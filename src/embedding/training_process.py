@@ -127,7 +127,7 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
                 tokens = await self.entity_wrapper.tokenize(question,
                                                             sw_size='large',
                                                             filter_ents='False')
-                # if tokens[0] == 'UNK':
+                
                 tokens_no_sw = await self.entity_wrapper.tokenize(question,
                                                                   sw_size='small',
                                                                   filter_ents='False')
