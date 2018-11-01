@@ -47,7 +47,7 @@ async def get_from_er_server(relative_url, params=None):
         elif params['q'] == "@{week}@":
             return ["@{week}@"]
         else:
-            return []
+            return ["UNK"]
     else:
         return {}
 

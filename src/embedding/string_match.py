@@ -58,11 +58,13 @@ class StringMatch:
                 entities, t_cust_ents, t_tok, q)
             if cust_ent_score is not None:
                 match_probas.append(cust_ent_score)
-            else:
+            elif tok_q[0] != 'UNK' and t_tok[0] != 'UNK':
                 score = self.__jaccard_similarity(tok_q, t_tok)
                 self.logger.debug("raw score: %f", score)
                 match_probas.append(score if len(t_cust_ents) == 0 else
-                                    score - 0.2*score)
+                                    score - 0.2 * score)
+            else:
+                match_probas.append(0.0)
 
         self.logger.info("match_probas: {}".format(match_probas))
         max_proba = max(match_probas)
