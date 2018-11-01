@@ -36,16 +36,7 @@ class StringMatch:
     async def get_string_match(self, q, subset_idx=None,
                                all_larger_zero=False, entities=None):
         self.logger.info("searching for word matches")
-        tok_train = self.tok_train if subset_idx is None else [
-            self.tok_train[i] for i in subset_idx
-        ]
-        tok_train_no_sw = self.tok_train_no_sw if subset_idx is None else [
-            self.tok_train_no_sw[i] for i in subset_idx
-        ]
-        train_data = self.train_data if subset_idx is None else [
-            self.train_data[i] for i in subset_idx
-        ]
-        idx = subset_idx if subset_idx is not None else range(len(train_data))
+        tok_train, tok_train_no_sw, train_data, idx = self.subset_data(subset_idx)
         tok_q = await self.entity_wrapper.tokenize(
             q, filter_ents=self.filter_entities, sw_size=self.stopword_size)
         tok_q_no_sw = await self.entity_wrapper.tokenize(
@@ -63,26 +54,10 @@ class StringMatch:
                 # give score of 2 to make absolutely sure that this one is accepted
                 match_probas.append(2.)
                 continue
-            if entities:
-                matching_ents = {k: e for k, v in entities.items()
-                                 for e in v if e in t_cust_ents}
-            else:
-                matching_ents = {}
-            self.logger.debug("matching_ents: {}".format(matching_ents))
-            if len(matching_ents) > 0:
-                subst_query = q
-                for k, e in matching_ents.items():
-                    w = subst_query.lower().find(k)
-                    subst_query = subst_query[:w] + '@{' + e + '}@' + subst_query[w+len(k):]
-                tok_subst_q = await self.entity_wrapper.tokenize(
-                    subst_query, filter_ents=self.filter_entities, sw_size=self.stopword_size)
-                self.logger.debug("subst_query: {}".format(subst_query))
-                self.logger.debug("tok_subst_query: {}".format(tok_subst_q))
-                self.logger.debug("t_tok: {}".format(t_tok))
-                score = self.__jaccard_similarity(tok_subst_q, t_tok)
-                self.logger.debug("raw score: %f", score)
-                match_probas.append(score + min(0.5 * (1 - score), 0.3) *
-                                    len(matching_ents) / len(t_cust_ents))
+            cust_ent_score = await self.match_custom_entities(
+                entities, t_cust_ents, t_tok, q)
+            if cust_ent_score is not None:
+                match_probas.append(cust_ent_score)
             else:
                 score = self.__jaccard_similarity(tok_q, t_tok)
                 self.logger.debug("raw score: %f", score)
@@ -103,6 +78,46 @@ class StringMatch:
             preds = [preds[0]]
         self.logger.info("string_match: {} - {}".format(max_proba, preds))
         return max_proba, preds
+
+    async def match_custom_entities(self, entities, t_cust_ents, t_tok, q):
+        if entities:
+            matching_ents = {k.lower(): e for k, v in entities.items()
+                             for e in v if e in t_cust_ents}
+        else:
+            matching_ents = {}
+        self.logger.debug("matching_ents: {}".format(matching_ents))
+        if len(matching_ents) > 0:
+            subst_query = q
+            for k, e in matching_ents.items():
+                w = subst_query.lower().find(k)
+                if w < 0:
+                    self.logger.warning("matched entities not found")
+                    continue
+                subst_query = subst_query[:w] + '@{' + e + '}@' + subst_query[w+len(k):]
+            tok_subst_q = await self.entity_wrapper.tokenize(
+                subst_query, filter_ents=self.filter_entities, sw_size=self.stopword_size)
+            self.logger.debug("subst_query: {}".format(subst_query))
+            self.logger.debug("tok_subst_query: {}".format(tok_subst_q))
+            self.logger.debug("t_tok: {}".format(t_tok))
+            score = self.__jaccard_similarity(tok_subst_q, t_tok)
+            self.logger.debug("raw score: %f", score)
+            return (score + min(0.5 * (1 - score), 0.3) *
+                    len(matching_ents) / len(t_cust_ents))
+        else:
+            return None
+
+    def subset_data(self, subset_idx):
+        tok_train = self.tok_train if subset_idx is None else [
+            self.tok_train[i] for i in subset_idx
+        ]
+        tok_train_no_sw = self.tok_train_no_sw if subset_idx is None else [
+            self.tok_train_no_sw[i] for i in subset_idx
+        ]
+        train_data = self.train_data if subset_idx is None else [
+            self.train_data[i] for i in subset_idx
+        ]
+        idx = subset_idx if subset_idx is not None else range(len(train_data))
+        return tok_train, tok_train_no_sw, train_data, idx
 
     def __jaccard_similarity(self, list1, list2):
         a = set(list1)
