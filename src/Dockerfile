@@ -2,7 +2,7 @@
 FROM python:3.6.8-slim-stretch
 LABEL maintainer "Pedro Teixeira <pedrotei@hutoma.com>"
 
-RUN echo "2018-01-25" > /os_patch_date.txt
+RUN echo "2018-02-14" > /os_patch_date.txt
 
 RUN apt-get update \
  && apt-get upgrade -y \
