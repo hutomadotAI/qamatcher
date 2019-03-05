@@ -26,8 +26,8 @@ def _get_logger():
 
 
 class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
-    def __init__(self, pool, asyncio_loop, aiohttp_client_session=None):
-        super().__init__(pool, asyncio_loop)
+    def __init__(self, pool, aiohttp_client_session=None):
+        super().__init__(pool)
         self.chat_args = None
         self.ai = None
         self.logger = _get_logger()

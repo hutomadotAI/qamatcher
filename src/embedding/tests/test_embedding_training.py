@@ -9,6 +9,7 @@ import unittest
 
 import ai_training as ait
 
+pytestmark = pytest.mark.asyncio
 
 async def mock_w2v_call(payload, endpoint='words'):
     if endpoint == "words":
@@ -40,7 +41,7 @@ async def get_from_er_server(relative_url, params=None):
 @pytest.fixture
 async def mocked_train(mocker, loop):
     training = embedding.training_process.EmbedTrainingProcessWorker(
-        None, loop, "no_aiohttp_session")
+        None, "no_aiohttp_session")
 
     mocker.patch.object(
         training.w2v_client, "w2v_call", new=mock_w2v_call)
