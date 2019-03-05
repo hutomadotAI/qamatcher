@@ -29,7 +29,6 @@ pytest-timeout = {version="*", index="pypi"}
 pytest-mock = {version="*", index="pypi"}
 flake8 = {version="*", index="pypi"}
 yapf = {version="*", index="pypi"}
-hu_build = {version="*", index="hu_pypi"}
 
 [requires]
 python_version = "3.7"
