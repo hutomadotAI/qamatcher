@@ -5,9 +5,9 @@ import logging.config
 import pathlib
 import os
 
-import asyncio_utils
 from aiohttp import web
 import yaml
+import async_process_pool
 
 import ai_training as ait
 from chat_process import EmbeddingChatProcessWorker
@@ -101,7 +101,7 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
         chat_processes = 1 if self.config.chat_enabled else 0
         if chat_processes > 0:
             calc_queue_size = chat_processes * 2
-            self.process_pool2 = asyncio_utils.AsyncProcessPool(
+            self.process_pool2 = async_process_pool.process_pool.AsyncProcessPool(
                 self.controller.multiprocessing_manager, 'EMBEDDING_Calc',
                 asyncio_loop, chat_processes, calc_queue_size, calc_queue_size)
             await self.process_pool2.initialize_processes(
