@@ -73,7 +73,6 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
 
     async def on_startup(self):
         """Initialize SVCLASS worker processes"""
-        asyncio_loop = self.controller.asyncio_loop
         thread_pool_executor = self.controller.thread_pool_executor
 
         # For training servers only, create storage directory if doesn't exist
@@ -84,7 +83,8 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
                                     training_root)
                 training_root.mkdir(parents=True, exist_ok=True)
 
-        ai_list = await asyncio_loop.run_in_executor(
+        loop = asyncio.get_running_loop()
+        ai_list = await loop.run_in_executor(
             thread_pool_executor, ait.find_training_from_directory,
             self.config.training_data_root)
 
@@ -103,7 +103,7 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
             calc_queue_size = chat_processes * 2
             self.process_pool2 = async_process_pool.process_pool.AsyncProcessPool(
                 self.controller.multiprocessing_manager, 'EMBEDDING_Calc',
-                asyncio_loop, chat_processes, calc_queue_size, calc_queue_size)
+                chat_processes, calc_queue_size, calc_queue_size)
             await self.process_pool2.initialize_processes(
                 EmbeddingChatProcessWorker)
 
@@ -128,17 +128,17 @@ def load_svm_config_from_environment():
     return config
 
 
-def init_aiohttp(app, loop, config=None):
+def init_aiohttp(app, config=None):
     """Initialize aiohttp"""
     ai_provider = EmbedingAiProvider(config)
-    ait.initialize_ai_training_http(app, ai_provider, loop)
+    ait.initialize_ai_training_http(app, ai_provider)
 
 
 LOGGING_CONFIG_TEXT = """
 version: 1
 root:
   level: DEBUG
-  handlers: ['console' ,'elastic']
+  handlers: ['console']
 formatters:
   default:
     format: "%(asctime)s.%(msecs)03d|%(levelname)s|%(name)s|%(message)s"
@@ -149,29 +149,16 @@ handlers:
     level: INFO
     stream: ext://sys.stdout
     formatter: default
-  elastic:
-    class: hu_logging.HuLogHandler
-    level: INFO
-    log_path: /tmp/hu_log
-    log_tag: EMB
-    es_log_index: ai-embedding-v1
-    multi_process: False
 """
 
 
 def main():
     """Main function"""
     logging_config = yaml.load(LOGGING_CONFIG_TEXT)
-    logging_config['handlers']['elastic']['elastic_search_url'] = \
-        os.environ.get('LOGGING_ES_URL', None)
-    log_tag = os.environ.get('LOGGING_ES_TAG', None)
-    if log_tag:
-        logging_config['handlers']['elastic']['log_tag'] = log_tag
     logging.config.dictConfig(logging_config)
 
-    loop = asyncio.get_event_loop()
     app = web.Application()
-    init_aiohttp(app, loop, load_svm_config_from_environment())
+    init_aiohttp(app, load_svm_config_from_environment())
 
     web.run_app(app, port=SvcConfig.get_instance().server_port)
 
