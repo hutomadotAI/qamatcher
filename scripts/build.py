@@ -38,6 +38,8 @@ if __name__ == "__main__":
         description='Embedding build command-line')
     PARSER.add_argument('--version', help='build version', default='latest')
     PARSER.add_argument(
+        '--docker-build', help='Build docker', action="store_true")
+    PARSER.add_argument(
         '--docker-push', help='Push docker images to GCR', action="store_true")
     BUILD_ARGS = PARSER.parse_args()
     main(BUILD_ARGS)
