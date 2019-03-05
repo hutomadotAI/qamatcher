@@ -140,15 +140,15 @@ root:
   level: DEBUG
   handlers: ['console']
 formatters:
-  default:
-    format: "%(asctime)s.%(msecs)03d|%(levelname)s|%(name)s|%(message)s"
-    datefmt: "%Y%m%d_%H%M%S"
+  json:
+    class: pythonjsonlogger.jsonlogger.JsonFormatter
+    format: "(asctime) (levelname) (name) (message)"
 handlers:
   console:
     class: logging.StreamHandler
     level: INFO
     stream: ext://sys.stdout
-    formatter: default
+    formatter: json
 """
 
 
@@ -160,7 +160,10 @@ def main():
     app = web.Application()
     init_aiohttp(app, load_svm_config_from_environment())
 
-    web.run_app(app, port=SvcConfig.get_instance().server_port)
+    logger = _get_logger()
+    port = SvcConfig.get_instance().server_port
+    logger.info("Starting embedding server", extra={"port": port})
+    web.run_app(app, port=port)
 
 
 if __name__ == '__main__':
