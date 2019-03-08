@@ -2,8 +2,8 @@
 import asyncio
 import logging
 import logging.config
-import pathlib
 import os
+import pathlib
 
 from aiohttp import web
 import yaml
@@ -154,7 +154,16 @@ handlers:
 
 def main():
     """Main function"""
-    logging_config = yaml.load(LOGGING_CONFIG_TEXT)
+    logging_config_file = os.environ.get("LOGGING_CONFIG_FILE", None)
+    if logging_config_file:
+        logging_config_path = pathlib.Path(logging_config_file)
+        with logging_config_path.open() as file_handle:
+            logging_config = yaml.safe_load(file_handle)
+    else:
+        logging_config = yaml.load(LOGGING_CONFIG_TEXT)
+    print("*** LOGGING CONFIG ***")
+    print(logging_config)
+    print("*** LOGGING CONFIG ***")
     logging.config.dictConfig(logging_config)
 
     app = web.Application()
