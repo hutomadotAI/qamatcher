@@ -84,9 +84,9 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
                 training_root.mkdir(parents=True, exist_ok=True)
 
         loop = asyncio.get_running_loop()
-        ai_list = await loop.run_in_executor(
-            thread_pool_executor, ait.find_training_from_directory,
-            self.config.training_data_root)
+        ai_list = await loop.run_in_executor(thread_pool_executor,
+                                             ait.find_training_from_directory,
+                                             self.config.training_data_root)
 
         for (dev_id, ai_id) in ai_list:
             self.create(dev_id, ai_id)
@@ -143,13 +143,30 @@ formatters:
   json:
     class: pythonjsonlogger.jsonlogger.JsonFormatter
     format: "(asctime) (levelname) (name) (message)"
+filters:
+    emblogfilter:
+        (): embedding.server.EmbLogFilter
 handlers:
   console:
     class: logging.StreamHandler
     level: INFO
     stream: ext://sys.stdout
     formatter: json
+    filters: [emblogfilter]
 """
+
+
+class EmbLogFilter(logging.Filter):
+    def __init__(self):
+        self.language = os.environ.get("AI_LANGUAGE", "en")
+        self.version = os.environ.get("AI_VERSION", None)
+
+    def filter(self, record):
+        """Add language, and if available, the version"""
+        record.emb_language = self.language
+        if self.version:
+            record.emb_version = self.version
+        return True
 
 
 def main():
