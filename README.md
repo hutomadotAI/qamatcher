@@ -7,5 +7,19 @@ This is a Python project
 # Build and Test
 Use pipenv and pytest
 
+Locally you can go into ./src directory and use pipenv to install.
+
+NOTE: You'll need to be on VPN to install all the packages.  Some are coming from our own pypi server. 
+
+```
+pipenv install 
+```
+
+Or you can alternatively use docker-compose.yml to build the containers. 
+
+```
+docker-compose up
+```
+
 # Contribute
 TODO:

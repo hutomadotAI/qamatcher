@@ -1,5 +1,6 @@
 # VS code
 .vscode/
+.venv
 
 bin/
 
