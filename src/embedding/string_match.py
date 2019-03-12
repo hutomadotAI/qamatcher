@@ -87,7 +87,7 @@ class StringMatch:
                              for e in v if e in t_cust_ents}
         else:
             matching_ents = {}
-        self.logger.debug("matching_ents: {}".format(matching_ents))
+        self.logger.info("matching_ents: {}".format(matching_ents))
         if len(matching_ents) > 0:
             subst_query = q
             for k, e in matching_ents.items():

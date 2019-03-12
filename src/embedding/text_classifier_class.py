@@ -102,10 +102,13 @@ class EmbeddingComparison:
     def fit(self, X, y):
         self.vectorizer.fit(X, y)
         self.X_tfidf = self.vectorizer.transform(X)
-        # subtracting 1st principal component according to
-        # 'A SIMPLE BUT TOUGH-TO-BEAT BASELINE FOR SENTENCE EMBEDDINGS' by Arora et. al.
-        self.pca.fit(self.X_tfidf)
-        self.X_tfidf = self.X_tfidf - self.pca.components_[0]
+        if self.X_tfidf.shape[0] > 1:
+            # subtracting 1st principal component according to
+            # 'A SIMPLE BUT TOUGH-TO-BEAT BASELINE FOR SENTENCE EMBEDDINGS' by Arora et. al.
+            self.pca.fit(self.X_tfidf)
+            self.X_tfidf = self.X_tfidf - self.pca.components_[0]
+        else:
+            self.pca.components_ = [np.zeros(self.X_tfidf.shape[1])]
         self.y = np.array(y)
         self.X = X
         self.classes = list(set(y))

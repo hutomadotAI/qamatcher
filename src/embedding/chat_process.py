@@ -57,27 +57,27 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
         x_tokens_testset = [
             await self.entity_wrapper.tokenize(msg.question, sw_size='xlarge')
         ]
-        self.logger.debug("x_tokens_testset: {}".format(x_tokens_testset))
-        self.logger.debug("x_tokens_testset: {}".format(
+        self.logger.info("x_tokens_testset: {}".format(x_tokens_testset))
+        self.logger.info("x_tokens_testset: {}".format(
             len(x_tokens_testset[0])))
-        self.logger.debug("tokenizing: {}s".format(time.time() - t_start))
+        self.logger.info("tokenizing: {}s".format(time.time() - t_start))
 
         # get question entities
         t_start = time.time()
         msg_spacy_entities = await self.entity_wrapper.extract_entities(msg.question)
-        self.logger.debug("msg_spacy_entities: {}".format(msg_spacy_entities))
-        self.logger.debug("msg_spacy_entities: {}s".format(time.time() - t_start))
+        self.logger.info("msg_spacy_entities: {}".format(msg_spacy_entities))
+        self.logger.info("msg_spacy_entities: {}s".format(time.time() - t_start))
 
         # get string match
         t_start = time.time()
         sm_pred, sm_prob = await self.get_string_match(
             msg, msg_spacy_entities, x_tokens_testset, msg.entities)
-        self.logger.debug("string_match: {}s".format(time.time() - t_start))
+        self.logger.info("string_match: {}s".format(time.time() - t_start))
 
         # entity matcher
         t_start = time.time()
         er_pred, er_prob = await self.get_entity_match(msg, msg_spacy_entities, x_tokens_testset)
-        self.logger.debug("entity_match: {}s".format(time.time() - t_start))
+        self.logger.info("entity_match: {}s".format(time.time() - t_start))
 
         # if SM proba larger take that
         if sm_prob[0] > er_prob[0] and sm_prob[0] > STRING_PROBA_THRES:
@@ -93,7 +93,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
             y_pred, y_prob = await self.get_embedding_match(
                 msg, msg_spacy_entities, x_tokens_testset)
             self.logger.info("default emb: {}".format(y_pred[0]))
-            self.logger.debug("embedding: {}s".format(time.time() - t_start))
+            self.logger.info("embedding: {}s".format(time.time() - t_start))
         else:
             y_pred = [""]
             y_prob = [0.0]
@@ -137,7 +137,7 @@ class EmbeddingChatProcessWorker(ait_c.ChatProcessWorkerABC):
                     x_tokens_testset, subset_idx=er_idxs)
                 er_prob = [ENTITY_MATCH_PROBA]
 
-                self.logger.debug("er_pred: {} er_prob: {}".format(
+                self.logger.info("er_pred: {} er_prob: {}".format(
                     er_pred, er_prob))
             else:
                 er_pred = ['']
