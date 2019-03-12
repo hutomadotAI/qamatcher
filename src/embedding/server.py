@@ -1,5 +1,4 @@
 """SV Classifier server code"""
-import asyncio
 import logging
 import logging.config
 import os
