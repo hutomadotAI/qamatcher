@@ -74,7 +74,7 @@ class EntityWrapper:
 
     def match_entities(self, test_q, ents_msg, subset_idxs=None):
         test_match = self.__prepro_question(test_q)
-        self.logger.debug("test_match: {}".format(test_match))
+        self.logger.info("test_match: {}".format(test_match))
 
         # subset if already pre-selected using different algo
         sub_idxs = subset_idxs if subset_idxs is not None else list(
@@ -92,7 +92,7 @@ class EntityWrapper:
         max_cnt = max(cnt)
         interrog_matches = [(m[0], m[1]) for m in interrog_matches
                             if m[2] == max_cnt and max_cnt > 0]
-        self.logger.debug("interrog matches: {}".format(interrog_matches))
+        self.logger.info("interrog matches: {}".format(interrog_matches))
         if len(interrog_matches) > 0:
             train_ents = interrog_matches
         else:
@@ -102,15 +102,15 @@ class EntityWrapper:
         matched_labels = self.find_matches(train_ents, test_match)
 
         if len(matched_labels) > 0:
-            self.logger.debug("entity matches: {} ({} max matches)".format(
+            self.logger.info("entity matches: {} ({} max matches)".format(
               matched_labels, max_cnt))
             return matched_labels
         elif len(interrog_matches) > 0:
-            self.logger.debug("interrog matches: {}".format(
+            self.logger.info("interrog matches: {}".format(
               [(i, self.train_labels[i]) for i, _ in interrog_matches]))
             return [(i, self.train_labels[i]) for i, _ in interrog_matches]
         else:
-            self.logger.debug("no entity matches")
+            self.logger.info("no entity matches")
             return []
 
     def find_matches(self, train_ents, test_match):
