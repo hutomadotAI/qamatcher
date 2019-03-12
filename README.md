@@ -21,5 +21,14 @@ Or you can alternatively use docker-compose.yml to build the containers.
 docker-compose up
 ```
 
+# Upgrading dependencies
+Use pipenv to upgrade a package.  Ensure you are on VPN.  Choose a new branch if required and run the upgrade.
+
+```
+pipenv upgrade hu_training
+```
+
+Now commit the changed pipfile.lock to the repo
+
 # Contribute
 TODO:
