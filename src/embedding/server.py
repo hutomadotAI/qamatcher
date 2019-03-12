@@ -73,8 +73,6 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
 
     async def on_startup(self):
         """Initialize SVCLASS worker processes"""
-        thread_pool_executor = self.controller.thread_pool_executor
-
         # For training servers only, create storage directory if doesn't exist
         if self.config.training_enabled:
             training_root = pathlib.Path(self.config.training_data_root)
@@ -83,10 +81,7 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
                                     training_root)
                 training_root.mkdir(parents=True, exist_ok=True)
 
-        loop = asyncio.get_running_loop()
-        ai_list = await loop.run_in_executor(thread_pool_executor,
-                                             ait.find_training_from_directory,
-                                             self.config.training_data_root)
+        ai_list = ait.find_training_from_directory(self.config.training_data_root)
 
         for (dev_id, ai_id) in ai_list:
             self.create(dev_id, ai_id)
