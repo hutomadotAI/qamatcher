@@ -3,9 +3,15 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
 
+[[source]]
+url = "https://pypi.hutoma.ai/simple"
+verify_ssl = false
+name = "hu_pypi"
+
 [packages]
-"flake8" = "*"
+flake8 = "*"
 yapf = "*"
+hu_build = {version="*", index="hu_pypi"}
 
 [dev-packages]
 

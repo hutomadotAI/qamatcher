@@ -1,13 +1,12 @@
 """SV Classifier server code"""
-import asyncio
 import logging
 import logging.config
-import pathlib
 import os
+import pathlib
 
-import asyncio_utils
 from aiohttp import web
 import yaml
+import async_process_pool
 
 import ai_training as ait
 from chat_process import EmbeddingChatProcessWorker
@@ -73,9 +72,6 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
 
     async def on_startup(self):
         """Initialize SVCLASS worker processes"""
-        asyncio_loop = self.controller.asyncio_loop
-        thread_pool_executor = self.controller.thread_pool_executor
-
         # For training servers only, create storage directory if doesn't exist
         if self.config.training_enabled:
             training_root = pathlib.Path(self.config.training_data_root)
@@ -84,9 +80,7 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
                                     training_root)
                 training_root.mkdir(parents=True, exist_ok=True)
 
-        ai_list = await asyncio_loop.run_in_executor(
-            thread_pool_executor, ait.find_training_from_directory,
-            self.config.training_data_root)
+        ai_list = ait.find_training_from_directory(self.config.training_data_root)
 
         for (dev_id, ai_id) in ai_list:
             self.create(dev_id, ai_id)
@@ -101,9 +95,9 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
         chat_processes = 1 if self.config.chat_enabled else 0
         if chat_processes > 0:
             calc_queue_size = chat_processes * 2
-            self.process_pool2 = asyncio_utils.AsyncProcessPool(
+            self.process_pool2 = async_process_pool.process_pool.AsyncProcessPool(
                 self.controller.multiprocessing_manager, 'EMBEDDING_Calc',
-                asyncio_loop, chat_processes, calc_queue_size, calc_queue_size)
+                chat_processes, calc_queue_size, calc_queue_size)
             await self.process_pool2.initialize_processes(
                 EmbeddingChatProcessWorker)
 
@@ -128,52 +122,68 @@ def load_svm_config_from_environment():
     return config
 
 
-def init_aiohttp(app, loop, config=None):
+def init_aiohttp(app, config=None):
     """Initialize aiohttp"""
     ai_provider = EmbedingAiProvider(config)
-    ait.initialize_ai_training_http(app, ai_provider, loop)
+    ait.initialize_ai_training_http(app, ai_provider)
 
 
 LOGGING_CONFIG_TEXT = """
 version: 1
 root:
   level: DEBUG
-  handlers: ['console' ,'elastic']
+  handlers: ['console']
 formatters:
-  default:
-    format: "%(asctime)s.%(msecs)03d|%(levelname)s|%(name)s|%(message)s"
-    datefmt: "%Y%m%d_%H%M%S"
+  json:
+    class: pythonjsonlogger.jsonlogger.JsonFormatter
+    format: "(asctime) (levelname) (name) (message)"
+filters:
+    emblogfilter:
+        (): embedding.server.EmbLogFilter
 handlers:
   console:
     class: logging.StreamHandler
     level: INFO
     stream: ext://sys.stdout
-    formatter: default
-  elastic:
-    class: hu_logging.HuLogHandler
-    level: INFO
-    log_path: /tmp/hu_log
-    log_tag: EMB
-    es_log_index: ai-embedding-v1
-    multi_process: False
+    formatter: json
+    filters: [emblogfilter]
 """
+
+
+class EmbLogFilter(logging.Filter):
+    def __init__(self):
+        self.language = os.environ.get("AI_LANGUAGE", "en")
+        self.version = os.environ.get("AI_VERSION", None)
+
+    def filter(self, record):
+        """Add language, and if available, the version"""
+        record.emb_language = self.language
+        if self.version:
+            record.emb_version = self.version
+        return True
 
 
 def main():
     """Main function"""
-    logging_config = yaml.load(LOGGING_CONFIG_TEXT)
-    logging_config['handlers']['elastic']['elastic_search_url'] = \
-        os.environ.get('LOGGING_ES_URL', None)
-    log_tag = os.environ.get('LOGGING_ES_TAG', None)
-    if log_tag:
-        logging_config['handlers']['elastic']['log_tag'] = log_tag
+    logging_config_file = os.environ.get("LOGGING_CONFIG_FILE", None)
+    if logging_config_file:
+        logging_config_path = pathlib.Path(logging_config_file)
+        with logging_config_path.open() as file_handle:
+            logging_config = yaml.safe_load(file_handle)
+    else:
+        logging_config = yaml.load(LOGGING_CONFIG_TEXT)
+    print("*** LOGGING CONFIG ***")
+    print(logging_config)
+    print("*** LOGGING CONFIG ***")
     logging.config.dictConfig(logging_config)
 
-    loop = asyncio.get_event_loop()
     app = web.Application()
-    init_aiohttp(app, loop, load_svm_config_from_environment())
+    init_aiohttp(app, load_svm_config_from_environment())
 
-    web.run_app(app, port=SvcConfig.get_instance().server_port)
+    logger = _get_logger()
+    port = SvcConfig.get_instance().server_port
+    logger.info("Starting embedding server", extra={"port": port})
+    web.run_app(app, port=port)
 
 
 if __name__ == '__main__':

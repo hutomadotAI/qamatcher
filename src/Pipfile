@@ -9,14 +9,17 @@ verify_ssl = false
 name = "hu_pypi"
 
 [packages]
+fluent-logger = {version="*", index="pypi"}
+python-json-logger = {version="*", index="pypi"}
+pyyaml = {version="*", index="pypi"}
+
 dill = {version="*", index="pypi"}
 numpy = {version="*", index="pypi"}
 scipy = {version="*", index="pypi"}
 sklearn = {version="*", index="pypi"}
-pyyaml = {version="*", index="pypi"}
 matplotlib = {version="*", index="pypi"}
+
 # internal libraries
-hu_logging = {version="*", index="hu_pypi"}
 hu_utils = {version="*", index="hu_pypi"}
 hu_training = {version="*", index="hu_pypi"}
 embedding = {editable = true, path = "."}
@@ -30,7 +33,6 @@ pytest-timeout = {version="*", index="pypi"}
 pytest-mock = {version="*", index="pypi"}
 flake8 = {version="*", index="pypi"}
 yapf = {version="*", index="pypi"}
-hu_build = {version="*", index="hu_pypi"}
 
 [requires]
-python_version = "3.6"
+python_version = "3.7"

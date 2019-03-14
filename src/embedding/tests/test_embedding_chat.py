@@ -7,6 +7,7 @@ import embedding.chat_process
 
 import ai_training.chat_process as ait_c
 
+pytestmark = pytest.mark.asyncio
 
 async def mock_w2v_call(payload):
     return {'vectors': {"word1": [1.1, 1.2, 1.3], "word2": [0.1, 0.2, 0.3]}}
@@ -55,7 +56,7 @@ async def get_from_er_server(relative_url, params=None):
 @pytest.fixture
 async def mocked_chat(mocker, loop):
     chat = embedding.chat_process.EmbeddingChatProcessWorker(
-        None, loop, "no_aiohttp_session")
+        None, "no_aiohttp_session")
 
     mocker.patch.object(
         chat.w2v_client, "get_vectors_for_words", new=mock_w2v_call)

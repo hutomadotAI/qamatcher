@@ -38,8 +38,8 @@ UPDATE_EVERY_N_SECONDS = 10.0
 
 
 class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
-    def __init__(self, pool, asyncio_loop, aiohttp_client_session=None):
-        super().__init__(pool, asyncio_loop)
+    def __init__(self, pool, aiohttp_client_session=None):
+        super().__init__(pool)
         self.callback_object = None
         self.logger = _get_logger()
         if aiohttp_client_session is None:
