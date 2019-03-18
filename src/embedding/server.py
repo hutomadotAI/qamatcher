@@ -1,4 +1,5 @@
 """SV Classifier server code"""
+import asyncio
 import logging
 import logging.config
 import os
@@ -72,6 +73,7 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
 
     async def on_startup(self):
         """Initialize SVCLASS worker processes"""
+
         # For training servers only, create storage directory if doesn't exist
         if self.config.training_enabled:
             training_root = pathlib.Path(self.config.training_data_root)
@@ -80,7 +82,8 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
                                     training_root)
                 training_root.mkdir(parents=True, exist_ok=True)
 
-        ai_list = ait.find_training_from_directory(self.config.training_data_root)
+        ai_list = ait.find_training_from_directory(
+            self.config.training_data_root)
 
         for (dev_id, ai_id) in ai_list:
             self.create(dev_id, ai_id)
@@ -101,6 +104,8 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
             await self.process_pool2.initialize_processes(
                 EmbeddingChatProcessWorker)
 
+        asyncio.create_task(self.__log_loop_tasks())
+
     async def on_shutdown(self):
         """Shutdown SVCLASS worker processes"""
         await super().on_shutdown()
@@ -113,6 +118,15 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
         """Called when need to create a new training item"""
         item = EmbeddingAiItem(self, dev_id, ai_id)
         return item
+
+    async def __log_loop_tasks(self):
+        while True:
+            pending_tasks = len(asyncio.all_tasks())
+            self.logger.info(
+                "asyncio tasks pending count = %d",
+                pending_tasks,
+                extra={"tasks": pending_tasks})
+            await asyncio.sleep(5)
 
 
 def load_svm_config_from_environment():
