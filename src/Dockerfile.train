@@ -2,8 +2,8 @@
 FROM emb_base AS release
 
 # Copy the code
-COPY emb_train/ /src/emb_train/
 COPY emb_common/ /src/emb_common/
+COPY emb_train/ /src/emb_train/
 
 USER appuser
 WORKDIR /home/appuser

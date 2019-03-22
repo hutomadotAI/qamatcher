@@ -2,8 +2,8 @@
 FROM emb_base AS release
 
 # Copy the code
-COPY emb_chat/ /src/emb_chat/
 COPY emb_common/ /src/emb_common/
+COPY emb_chat/ /src/emb_chat/
 
 USER appuser
 WORKDIR /home/appuser
