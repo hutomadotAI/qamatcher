@@ -3,7 +3,9 @@
 import pytest
 import tempfile
 
-import embedding.chat_process
+import emb_chat
+import emb_chat.chat_process
+import emb_common
 
 import ai_training.chat_process as ait_c
 
@@ -55,7 +57,7 @@ async def get_from_er_server(relative_url, params=None):
 
 @pytest.fixture
 async def mocked_chat(mocker, loop):
-    chat = embedding.chat_process.EmbeddingChatProcessWorker(
+    chat = emb_chat.chat_process.EmbeddingChatProcessWorker(
         None, "no_aiohttp_session")
 
     mocker.patch.object(
@@ -127,7 +129,7 @@ async def mocked_chat(mocker, loop):
         [], [], [], ["custom_ent"], ["week"]
     ]
     # mock out the load methods
-    mocker.patch("embedding.text_classifier_class.EmbeddingComparison.load_model")
+    mocker.patch("emb_common.text_classifier_class.EmbeddingComparison.load_model")
     mocker.patch.object(chat.entity_wrapper, "load_data")
     mocker.patch.object(chat.string_match, "load_train_data")
 
@@ -165,7 +167,7 @@ async def test_chat_request_string_match(mocker, mocked_chat):
 
 
 async def test_chat_request_entity_match(mocker, mocked_chat):
-    score = float(embedding.chat_process.ENTITY_MATCH_PROBA)
+    score = float(emb_chat.chat_process.ENTITY_MATCH_PROBA)
     mocker.spy(mocked_chat.entity_wrapper, "match_entities")
 
     msg = ait_c.ChatRequestMessage("This should give an entity match for London and today",
@@ -181,8 +183,8 @@ async def test_chat_request_entity_match(mocker, mocked_chat):
 async def test_chat_request_embedding_match(mocker, mocked_chat):
     score = 0.85
     mocker.spy(mocked_chat.entity_wrapper, "match_entities")
-    mocker.patch("embedding.text_classifier_class.EmbeddingComparison.predict")
-    embedding.text_classifier_class.EmbeddingComparison.predict.return_value = (
+    mocker.patch("emb_common.text_classifier_class.EmbeddingComparison.predict")
+    emb_common.text_classifier_class.EmbeddingComparison.predict.return_value = (
         ["embedding wins"], [1.0])
 
     msg = ait_c.ChatRequestMessage("This should match with word1 word2",

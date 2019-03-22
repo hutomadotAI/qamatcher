@@ -1,7 +1,8 @@
 # flake8: noqa
 
 import pytest
-import embedding.training_process
+import emb_train
+import emb_train.training_process
 import numpy
 import tempfile
 from pathlib import Path
@@ -40,7 +41,7 @@ async def get_from_er_server(relative_url, params=None):
 
 @pytest.fixture
 async def mocked_train(mocker, loop):
-    training = embedding.training_process.EmbedTrainingProcessWorker(
+    training = emb_train.training_process.EmbedTrainingProcessWorker(
         None, "no_aiohttp_session")
 
     mocker.patch.object(
@@ -166,8 +167,8 @@ async def test_train_success(mocked_train, mocker):
 hi
 hihi"""
     # mock out the maths/save functions so we can UT train()
-    mocker.patch("embedding.text_classifier_class.EmbeddingComparison.fit")
-    mocker.patch("embedding.text_classifier_class.EmbeddingComparison.save_model")
+    mocker.patch("emb_common.text_classifier_class.EmbeddingComparison.fit")
+    mocker.patch("emb_common.text_classifier_class.EmbeddingComparison.save_model")
     mocker.patch("shutil.move")
 
     with tempfile.TemporaryDirectory() as tempdir:
@@ -195,8 +196,8 @@ async def test_train_success_with_callback(mocked_train, mocker):
 hi
 hihi"""
     # mock out the maths/save functions so we can UT train()
-    mocker.patch("embedding.text_classifier_class.EmbeddingComparison.fit")
-    mocker.patch("embedding.text_classifier_class.EmbeddingComparison.save_model")
+    mocker.patch("emb_common.text_classifier_class.EmbeddingComparison.fit")
+    mocker.patch("emb_common.text_classifier_class.EmbeddingComparison.save_model")
     mocker.patch("shutil.move")
     callback = MockCallback()
     mocker.patch.object(callback, "wait_to_save", create=True, new=dummy_async)

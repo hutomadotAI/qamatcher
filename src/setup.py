@@ -4,4 +4,4 @@
 from setuptools import setup
 
 # as this is for testing purposes only, don't provide metadata
-setup(name='embedding', version='0.1', packages=['embedding'])
+setup(name='embedding', version='0.1', packages=['emb_train', 'emb_chat', 'emb_common'])

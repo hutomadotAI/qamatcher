@@ -15,15 +15,21 @@ ROOT_DIR = SCRIPT_PATH.parent
 
 def main(build_args):
     """Main function"""
-    src_path = ROOT_DIR / 'src'
     tag_version = build_args.version
+    component = build_args.component
+
+    src_path = ROOT_DIR / 'src'
+
+    os.chdir(src_path)
+    subprocess.run(["docker", "build", ".", "-f", "Dockerfile.base", "-t", "emb_base"], check=True)
+
     docker_image = DockerImage(
-        src_path,
+        src_path / ("Dockerfile."+component),
         'backend/embedding',
         image_tag=tag_version,
         registry='eu.gcr.io/hutoma-backend')
     hu_build.build_docker.build_single_image(
-        "ai-embedding", docker_image, push=build_args.docker_push)
+        "ai-embedding-"+component, docker_image, push=build_args.docker_push)
     image_name = docker_image.full_image_tag()
     print("*** Building extracting results from images using container")
     result = subprocess.run(["docker", "create", image_name], stdout=subprocess.PIPE,
@@ -36,6 +42,7 @@ def main(build_args):
 if __name__ == "__main__":
     PARSER = argparse.ArgumentParser(
         description='Embedding build command-line')
+    PARSER.add_argument("component", choices=["chat", "train", "status"])
     PARSER.add_argument('--version', help='build version', default='latest')
     PARSER.add_argument(
         '--docker-build', help='Build docker', action="store_true")

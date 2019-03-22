@@ -1,0 +1,20 @@
+# Base off of the Python image
+FROM emb_base AS release
+
+# Copy the code
+COPY emb_train/ /src/emb_train/
+COPY emb_common/ /src/emb_common/
+
+USER appuser
+WORKDIR /home/appuser
+ENV EMB_SERVER_PORT 9090
+EXPOSE 9090
+CMD ["python3", "/src/chat/server.py"]
+#---------------------------
+FROM emb_base AS test
+RUN pipenv install --dev --system
+COPY --from=release /src/ /src/
+RUN pytest --junitxml=/tmp/tests.xml --timeout=30
+#---------------------------
+FROM release
+COPY --from=test /tmp/tests.xml /tmp/tests.xml

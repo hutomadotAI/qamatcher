@@ -10,12 +10,12 @@ import aiohttp
 import ai_training as ait
 import ai_training.training_process as aitp
 
-from embedding.text_classifier_class import EmbeddingComparison
+from emb_common.text_classifier_class import EmbeddingComparison
 
-from embedding.word2vec_client import Word2VecClient
-from embedding.entity_wrapper import EntityWrapper
-from embedding.svc_config import SvcConfig
-from embedding.string_match import StringMatch
+from emb_common.word2vec_client import Word2VecClient
+from emb_common.entity_wrapper import EntityWrapper
+from emb_common.svc_config import SvcConfig
+from emb_common.string_match import StringMatch
 
 MODEL_FILE = "model.pkl"
 DATA_FILE = "data.pkl"
