@@ -8,9 +8,12 @@ import pathlib
 from aiohttp import web
 import yaml
 
-import ai_training as ait
 from emb_train.training_process import EmbedTrainingProcessWorker
 from emb_common.svc_config import SvcConfig
+from hu_http_train.interface_item import TrainItemABC
+from hu_http_train.interface import AiTrainingProviderABC
+from hu_http_common.ai_training_config import Config
+import hu_http_train.http_server as http_server
 
 
 def _get_logger():
@@ -18,7 +21,7 @@ def _get_logger():
     return logger
 
 
-class EmbeddingAiItem(ait.AiTrainingItemABC):
+class EmbeddingAiItem(TrainItemABC):
     def __init__(self, wnet_ai_provider, dev_id, ai_id):
         super().__init__()
         self.dev_id = dev_id
@@ -44,7 +47,7 @@ class EmbeddingAiItem(ait.AiTrainingItemABC):
         return self.ai_provider.training_pool
 
 
-class EmbedingAiProvider(ait.AiTrainingProviderABC):
+class EmbedingAiProvider(AiTrainingProviderABC):
     """Similarity class"""
 
     def __init__(self, config):
@@ -72,12 +75,6 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
                                 training_root)
             training_root.mkdir(parents=True, exist_ok=True)
 
-        ai_list = ait.find_training_from_directory(
-            self.config.training_data_root)
-
-        for (dev_id, ai_id) in ai_list:
-            self.create(dev_id, ai_id)
-
         training_processes = 1
         training_queue_size = training_processes * 2
         self.training_pool = await self.controller.create_training_process_pool(
@@ -94,7 +91,7 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
         if self.training_pool is not None:
             await self.training_pool.shutdown()
 
-    def training_item_factory(self, dev_id, ai_id) -> ait.AiTrainingItemABC:
+    def training_item_factory(self, dev_id, ai_id) -> TrainItemABC:
         """Called when need to create a new training item"""
         item = EmbeddingAiItem(self, dev_id, ai_id)
         return item
@@ -111,7 +108,7 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
 
 def load_svm_config_from_environment():
     """Load SVM configuration frm file/environment"""
-    config = ait.Config()
+    config = Config()
     config.load_from_file_and_environment("emb.config")
     return config
 
@@ -119,7 +116,7 @@ def load_svm_config_from_environment():
 def init_aiohttp(app, config=None):
     """Initialize aiohttp"""
     ai_provider = EmbedingAiProvider(config)
-    ait.initialize_ai_training_http(app, ai_provider)
+    http_server.initialize_ai_training_http(app, ai_provider)
 
 
 LOGGING_CONFIG_TEXT = """
@@ -133,7 +130,7 @@ formatters:
     format: "(asctime) (levelname) (name) (message)"
 filters:
     emblogfilter:
-        (): embedding.server.EmbLogFilter
+        (): emb_train.server.EmbLogFilter
 handlers:
   console:
     class: logging.StreamHandler
