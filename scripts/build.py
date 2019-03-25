@@ -25,7 +25,7 @@ def main(build_args):
 
     docker_image = DockerImage(
         src_path / ("Dockerfile."+component),
-        'backend/embedding',
+        'backend/embedding-'+component,
         image_tag=tag_version,
         registry='eu.gcr.io/hutoma-backend')
     hu_build.build_docker.build_single_image(

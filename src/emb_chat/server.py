@@ -11,7 +11,7 @@ import async_process_pool
 
 import ai_training as ait
 from emb_chat.chat_process import EmbeddingChatProcessWorker
-from svc_config import SvcConfig
+from emb_common.svc_config import SvcConfig
 
 
 def _get_logger():

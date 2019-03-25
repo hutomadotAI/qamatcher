@@ -10,9 +10,8 @@ import yaml
 import async_process_pool
 
 import ai_training as ait
-from chat_process import EmbeddingChatProcessWorker
-from training_process import EmbedTrainingProcessWorker
-from svc_config import SvcConfig
+from emb_train.training_process import EmbedTrainingProcessWorker
+from emb_common.svc_config import SvcConfig
 
 
 def _get_logger():
