@@ -7,8 +7,10 @@ from pathlib import Path
 import re
 import aiohttp
 
-import ai_training as ait
-import ai_training.training_process as aitp
+import hu_http_train.training_process as aitp
+import hu_http_common.common as common
+import hu_http_common.training_data as t_data
+import hu_http_common.training_file as t_file
 
 from emb_common.text_classifier_class import EmbeddingComparison
 
@@ -75,17 +77,17 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
                 self.callback.check_for_cancel()
             self.last_update_sent = now
 
-    async def train(self, msg, topic: ait.Topic, callback):
+    async def train(self, msg, topic: t_data.Topic, callback):
         # handshake with API to say we're starting training
         self.callback = callback
         self.last_update_sent = None
         if callback is not None:
             await callback.wait_to_save()
 
-        training_file_path = msg.ai_path / ait.AI_TRAINING_STANDARD_FILE_NAME
+        training_file_path = msg.ai_path / t_file.AI_TRAINING_STANDARD_FILE_NAME
         self.logger.info(
             "Start training using file {}".format(training_file_path))
-        root_topic = ait.file_load_training_data_v1(training_file_path)
+        root_topic = t_data.file_load_training_data_v1(training_file_path)
 
         q_and_a = [(entry.question, entry.answer)
                    for entry in root_topic.entries]
@@ -174,5 +176,5 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
         now = datetime.datetime.now()
         hash_value = now.strftime("%y%m%d.%H%M%S")
         training_data_hash = hash_value
-        result = (ait.AiTrainingState.ai_training_complete, training_data_hash)
+        result = (common.AiTrainingState.ai_training_complete, training_data_hash)
         return result

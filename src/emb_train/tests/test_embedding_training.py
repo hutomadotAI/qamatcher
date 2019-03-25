@@ -8,7 +8,9 @@ import tempfile
 from pathlib import Path
 import unittest
 
-import ai_training as ait
+import hu_http_train.training_process as ait_t
+import hu_http_common.training_data as t_data
+import hu_http_common.training_file as t_file
 
 pytestmark = pytest.mark.asyncio
 
@@ -173,11 +175,11 @@ hihi"""
 
     with tempfile.TemporaryDirectory() as tempdir:
         ai_path = Path(tempdir)
-        train_file = ai_path / ait.AI_TRAINING_STANDARD_FILE_NAME
+        train_file = ai_path / t_file.AI_TRAINING_STANDARD_FILE_NAME
         with train_file.open("w") as file_handle:
             file_handle.write(DUMMY_TRAINING_DATA)
         
-        msg = ait.training_process.TrainingMessage(ai_path, DUMMY_AIID, 0)
+        msg = ait_t.TrainingMessage(ai_path, DUMMY_AIID, 0)
         topic = None
         await mocked_train.train(msg, topic, None)
 
@@ -206,10 +208,10 @@ hihi"""
 
     with tempfile.TemporaryDirectory() as tempdir:
         ai_path = Path(tempdir)
-        train_file = ai_path / ait.AI_TRAINING_STANDARD_FILE_NAME
+        train_file = ai_path / t_file.AI_TRAINING_STANDARD_FILE_NAME
         with train_file.open("w") as file_handle:
             file_handle.write(DUMMY_TRAINING_DATA)
         
-        msg = ait.training_process.TrainingMessage(ai_path, DUMMY_AIID, 0)
+        msg = ait_t.TrainingMessage(ai_path, DUMMY_AIID, 0)
         topic = None
         await mocked_train.train(msg, topic, callback)

@@ -7,7 +7,6 @@ import pathlib
 
 from aiohttp import web
 import yaml
-import async_process_pool
 
 import ai_training as ait
 from emb_train.training_process import EmbedTrainingProcessWorker
@@ -44,12 +43,6 @@ class EmbeddingAiItem(ait.AiTrainingItemABC):
         """Get the training pool"""
         return self.ai_provider.training_pool
 
-    def create_chat_process_worker(self) -> (type, dict):
-        """Get the chat worker - return the type to create"""
-        return EmbeddingChatProcessWorker, {
-            'process_pool': self.ai_provider.process_pool2
-        }
-
 
 class EmbedingAiProvider(ait.AiTrainingProviderABC):
     """Similarity class"""
@@ -57,7 +50,6 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
     def __init__(self, config):
         super().__init__()
         self.__config = config
-        self.process_pool2 = None
         self.training_pool = None
         self.logger = _get_logger()
 
@@ -74,12 +66,11 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
         """Initialize SVCLASS worker processes"""
 
         # For training servers only, create storage directory if doesn't exist
-        if self.config.training_enabled:
-            training_root = pathlib.Path(self.config.training_data_root)
-            if not training_root.exists():
-                self.logger.warning("Directory %s doesn't exist, creating...",
-                                    training_root)
-                training_root.mkdir(parents=True, exist_ok=True)
+        training_root = pathlib.Path(self.config.training_data_root)
+        if not training_root.exists():
+            self.logger.warning("Directory %s doesn't exist, creating...",
+                                training_root)
+            training_root.mkdir(parents=True, exist_ok=True)
 
         ai_list = ait.find_training_from_directory(
             self.config.training_data_root)
@@ -87,21 +78,11 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
         for (dev_id, ai_id) in ai_list:
             self.create(dev_id, ai_id)
 
-        training_processes = 1 if self.config.training_enabled else 0
-        if training_processes > 0:
-            training_queue_size = training_processes * 2
-            self.training_pool = await self.controller.create_training_process_pool(
-                training_processes, training_queue_size,
-                EmbedTrainingProcessWorker)
-
-        chat_processes = 1 if self.config.chat_enabled else 0
-        if chat_processes > 0:
-            calc_queue_size = chat_processes * 2
-            self.process_pool2 = async_process_pool.process_pool.AsyncProcessPool(
-                self.controller.multiprocessing_manager, 'EMBEDDING_Calc',
-                chat_processes, calc_queue_size, calc_queue_size)
-            await self.process_pool2.initialize_processes(
-                EmbeddingChatProcessWorker)
+        training_processes = 1
+        training_queue_size = training_processes * 2
+        self.training_pool = await self.controller.create_training_process_pool(
+            training_processes, training_queue_size,
+            EmbedTrainingProcessWorker)
 
         asyncio.create_task(self.__log_loop_tasks())
 
