@@ -5,7 +5,7 @@ from pathlib import Path
 import time
 import aiohttp
 
-import ai_training.chat_process as ait_c
+import hu_http_chat.chat_process as ait_c
 from emb_common.entity_wrapper import EntityWrapper
 from emb_common.text_classifier_class import EmbeddingComparison
 from emb_common.word2vec_client import Word2VecClient

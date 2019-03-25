@@ -7,7 +7,7 @@ import emb_chat
 import emb_chat.chat_process
 import emb_common
 
-import ai_training.chat_process as ait_c
+import hu_http_chat.chat_process as ait_c
 
 pytestmark = pytest.mark.asyncio
 
