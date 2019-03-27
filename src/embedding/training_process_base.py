@@ -17,8 +17,8 @@ from embedding.svc_config import SvcConfig
 This is the base class of the training process for Hutoma chat console
 It generates weighted word vectors for each question in the training set
 and compares them during a chat session using cosine-similarity.
-It connects to an external word2vec service to collect the word embeddings 
-for the words in the phrases 
+It connects to an external word2vec service to collect the word embeddings
+for the words in the phrases
 """
 
 MODEL_FILE = "model.pkl"
