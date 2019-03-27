@@ -41,7 +41,7 @@ async def get_from_er_server(relative_url, params=None):
 
 @pytest.fixture
 async def mocked_train(mocker, loop):
-    training = embedding.training_process.EmbedTrainingProcessWorker(
+    training = embedding.training_process.QAMatcherTrainingProcessWorker(
         None, "no_aiohttp_session")
 
     mocker.patch.object(

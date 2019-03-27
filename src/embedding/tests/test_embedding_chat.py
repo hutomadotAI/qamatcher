@@ -55,7 +55,7 @@ async def get_from_er_server(relative_url, params=None):
 
 @pytest.fixture
 async def mocked_chat(mocker, loop):
-    chat = embedding.chat_process.EmbeddingChatProcessWorker(
+    chat = embedding.chat_process.QAMatcherChatProcessWorker(
         None, "no_aiohttp_session")
 
     mocker.patch.object(

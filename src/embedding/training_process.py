@@ -5,16 +5,12 @@ import shutil
 import tempfile
 from pathlib import Path
 import re
-import aiohttp
 
 import ai_training as ait
-import ai_training.training_process as aitp
 
-from embedding.text_classifier_class import EmbeddingComparison
-
+from embedding.training_process_base import EmbedTrainingProcessWorker
 from embedding.word2vec_client import Word2VecClient
-from embedding.entity_wrapper import EntityWrapper
-from embedding.svc_config import SvcConfig
+from embedding.entity_wrapper import EntityWrapperPlus
 from embedding.string_match import StringMatch
 
 MODEL_FILE = "model.pkl"
@@ -23,37 +19,22 @@ TRAIN_FILE = "train.pkl"
 
 
 def _get_logger():
-    logger = logging.getLogger('embedding.training')
+    logger = logging.getLogger('qa_matcher.training')
     return logger
-
-
-class TrainEmbedMessage(aitp.TrainingMessage):
-    """Message class for training a QA-Matcher"""
-
-    def __init__(self, ai_path, ai_id, max_training_mins: int):
-        super().__init__(ai_path, ai_id, max_training_mins)
 
 
 UPDATE_EVERY_N_SECONDS = 10.0
 
 
-class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
+class QAMatcherTrainingProcessWorker(EmbedTrainingProcessWorker):
     def __init__(self, pool, aiohttp_client_session=None):
-        super().__init__(pool)
-        self.callback_object = None
+        super().__init__(pool, aiohttp_client_session)
         self.logger = _get_logger()
-        if aiohttp_client_session is None:
-            aiohttp_client_session = aiohttp.ClientSession()
-
-        self.aiohttp_client = aiohttp_client_session
-        config = SvcConfig.get_instance()
-        self.w2v_client = Word2VecClient(config.w2v_server_url,
+        self.w2v_client = Word2VecClient(self.config.w2v_server_url,
                                          self.aiohttp_client)
-        self.entity_wrapper = EntityWrapper(config.er_server_url,
-                                            self.aiohttp_client)
+        self.entity_wrapper = EntityWrapperPlus(self.config.er_server_url,
+                                                self.aiohttp_client)
         self.string_match = StringMatch(self.entity_wrapper)
-        self.last_update_sent = None
-        self.callback = None
         self.regex_finder = re.compile(r'@{(.*?)}@')
 
     async def get_vectors(self, questions):
@@ -88,28 +69,6 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
         ents = [self.regex_finder.findall(question) for question in questions]
         return ents
 
-    async def tokenize(self, questions, sw_size, filter_ents):
-        tokens = [await self.entity_wrapper.tokenize(
-            question, sw_size=sw_size, filter_ents=filter_ents)
-                  for question in questions]
-        return tokens
-
-    async def get_word_vectors(self, x_tokens):
-        # find unknown words to word-embedding and get rid of them
-        x_tokens_set = list(set([w for l in x_tokens for w in l]))
-        unk_words = await self.w2v_client.get_unknown_words(x_tokens_set)
-        self.logger.info("unknown words: {}".format(unk_words))
-        x_tokens_set = [w for w in x_tokens_set if w not in unk_words]
-        x_tokens = [[w for w in s if w not in unk_words] for s in x_tokens]
-
-        # deal with empty sets/lists
-        if not x_tokens_set:
-            x_tokens_set = ['UNK']
-        x_tokens = [l if len(l) > 0 else ['UNK'] for l in x_tokens]
-
-        vecs = await self.get_vectors(x_tokens_set)
-        return vecs, x_tokens
-
     async def setup_string_matcher(self, q_and_a, temp_train_file):
         x, y = zip(*q_and_a)
 
@@ -135,27 +94,6 @@ class EmbedTrainingProcessWorker(aitp.TrainingProcessWorkerABC):
         self.entity_wrapper.save_data(temp_train_file, q_entities, a_entities, y)
         self.logger.info(
             "Entities saved to {}, tokenizing...".format(temp_train_file))
-
-    async def setup_embedding_matcher(self, q_and_a, temp_train_file):
-        x, y = zip(*q_and_a)
-
-        # tokenize for embedding
-        x_tokens = await self.tokenize(x, sw_size='xlarge', filter_ents='True')
-        self.report_progress(0.7)
-
-        # get word vectors to initialise embedding model
-        vecs, x_tokens = await self.get_word_vectors(x_tokens)
-        self.report_progress(0.75)
-        for question, tokens in zip(x, x_tokens):
-            self.logger.info("tokens: {}".format((question, tokens)))
-
-        # initialise the embedding model
-        cls = EmbeddingComparison(w2v=vecs)
-        self.logger.info("Fitting...")
-        cls.fit(x_tokens, y)
-        self.report_progress(0.8)
-        cls.save_model(temp_train_file)
-        self.logger.info("Saved model to {}".format(temp_train_file))
 
     async def train(self, msg, topic: ait.Topic, callback):
         # handshake with API to say we're starting training
