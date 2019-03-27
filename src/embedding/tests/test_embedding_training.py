@@ -11,6 +11,7 @@ import ai_training as ait
 
 pytestmark = pytest.mark.asyncio
 
+
 async def mock_w2v_call(payload, endpoint='words'):
     if endpoint == "words":
         return {'vectors': {"word1": [1.1, 1.2, 1.3], "word2": [0.1, 0.2, 0.3]}}

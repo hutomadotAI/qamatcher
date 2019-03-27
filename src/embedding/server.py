@@ -104,7 +104,7 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
             await self.process_pool2.initialize_processes(
                 EmbeddingChatProcessWorker)
 
-        asyncio.create_task(self.__log_loop_tasks())
+        await asyncio.create_task(self.__log_loop_tasks())
 
     async def on_shutdown(self):
         """Shutdown SVCLASS worker processes"""
@@ -166,6 +166,7 @@ handlers:
 
 class EmbLogFilter(logging.Filter):
     def __init__(self):
+        super().__init__()
         self.language = os.environ.get("AI_LANGUAGE", "en")
         self.version = os.environ.get("AI_VERSION", None)
 
