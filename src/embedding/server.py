@@ -9,10 +9,10 @@ from aiohttp import web
 import yaml
 import async_process_pool
 
-import ai_training as ait
-from chat_process import EmbeddingChatProcessWorker
-from training_process import EmbedTrainingProcessWorker
-from svc_config import SvcConfig
+import embedding.ai_training as ait
+from embedding.chat_process import QAMatcherChatProcessWorker
+from embedding.training_process import QAMatcherTrainingProcessWorker
+from embedding.svc_config import SvcConfig
 
 
 def _get_logger():
@@ -47,7 +47,7 @@ class EmbeddingAiItem(ait.AiTrainingItemABC):
 
     def create_chat_process_worker(self) -> (type, dict):
         """Get the chat worker - return the type to create"""
-        return EmbeddingChatProcessWorker, {
+        return QAMatcherChatProcessWorker, {
             'process_pool': self.ai_provider.process_pool2
         }
 
@@ -93,7 +93,7 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
             training_queue_size = training_processes * 2
             self.training_pool = await self.controller.create_training_process_pool(
                 training_processes, training_queue_size,
-                EmbedTrainingProcessWorker)
+                QAMatcherTrainingProcessWorker)
 
         chat_processes = 1 if self.config.chat_enabled else 0
         if chat_processes > 0:
@@ -102,7 +102,7 @@ class EmbedingAiProvider(ait.AiTrainingProviderABC):
                 self.controller.multiprocessing_manager, 'EMBEDDING_Calc',
                 chat_processes, calc_queue_size, calc_queue_size)
             await self.process_pool2.initialize_processes(
-                EmbeddingChatProcessWorker)
+                QAMatcherChatProcessWorker)
 
         await asyncio.create_task(self.__log_loop_tasks())
 
