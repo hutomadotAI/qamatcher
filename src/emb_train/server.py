@@ -47,7 +47,7 @@ class EmbeddingAiItem(TrainItemABC):
         return self.ai_provider.training_pool
 
 
-class EmbedingAiProvider(AiTrainingProviderABC):
+class EmbeddingAiProvider(AiTrainingProviderABC):
     """Similarity class"""
 
     def __init__(self, config):
@@ -115,7 +115,7 @@ def load_svm_config_from_environment():
 
 def init_aiohttp(app, config=None):
     """Initialize aiohttp"""
-    ai_provider = EmbedingAiProvider(config)
+    ai_provider = EmbeddingAiProvider(config)
     http_server.initialize_ai_training_http(app, ai_provider)
 
 
