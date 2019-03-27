@@ -20,7 +20,7 @@ func StartServer(port int, aipath string) {
 	embMux := EmbStatusServer{
 		training: trainingFiles{aipath: aipath}}
 	router := mux.NewRouter()
-	router.HandleFunc("/", embMux.getAis).Methods("GET")
+	router.HandleFunc("/ais", embMux.getAis).Methods("GET")
 	http.Handle("/", router)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("localhost:%d", port), router))
 }
