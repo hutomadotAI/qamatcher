@@ -9,21 +9,23 @@ import (
 )
 
 type EmbStatusServer struct {
-	aipath string
+	training trainingFiles
 }
 
 func StartServer(port int, aipath string) {
 	log.WithFields(log.Fields{
 		"port": port, "ai_path": aipath,
-	}).Info("Starting the server")
+	}).Info("Starting the EMB status server")
 
-	embMux := EmbStatusServer{aipath: aipath}
+	embMux := EmbStatusServer{
+		training: trainingFiles{aipath: aipath}}
 	router := mux.NewRouter()
 	router.HandleFunc("/", embMux.getAis).Methods("GET")
 	http.Handle("/", router)
-	http.ListenAndServe(fmt.Sprintf("localhost:%d", port), router)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf("localhost:%d", port), router))
 }
 
 func (emb EmbStatusServer) getAis(w http.ResponseWriter, req *http.Request) {
 	log.Info("In root")
+	emb.training.findAllAis()
 }

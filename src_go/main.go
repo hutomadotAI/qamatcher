@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"hutomadotai/embstatus/server"
 	"os"
 	"time"
@@ -17,6 +18,7 @@ func main() {
 	log.SetFormatter(&log.JSONFormatter{TimestampFormat: time.RFC3339Nano})
 	log.SetOutput(os.Stdout)
 	log.SetLevel(log.InfoLevel)
-	log.Info("Starting server...")
+	log.Info(fmt.Sprintf(
+		"Starting server with port %d, local path %s", *port, *aipath))
 	server.StartServer(*port, *aipath)
 }
