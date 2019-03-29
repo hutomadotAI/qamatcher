@@ -15,15 +15,22 @@ ROOT_DIR = SCRIPT_PATH.parent
 
 def main(build_args):
     """Main function"""
-    src_path = ROOT_DIR / 'src'
+    src_path = ROOT_DIR / 'src' / 'emb_v1'
     tag_version = build_args.version
+    if build_args.microk8s:
+        docker_push = True
+        registry = "localhost:32000"
+    else:
+        docker_push = build_args.docker_push
+        registry = 'eu.gcr.io/hutoma-backend'
+
     docker_image = DockerImage(
         src_path,
         'backend/embedding',
         image_tag=tag_version,
-        registry='eu.gcr.io/hutoma-backend')
+        registry=registry)
     hu_build.build_docker.build_single_image(
-        "ai-embedding", docker_image, push=build_args.docker_push)
+        "ai-embedding", docker_image, push=docker_push)
     image_name = docker_image.full_image_tag()
     print("*** Building extracting results from images using container")
     result = subprocess.run(["docker", "create", image_name], stdout=subprocess.PIPE,
@@ -38,8 +45,8 @@ if __name__ == "__main__":
         description='Embedding build command-line')
     PARSER.add_argument('--version', help='build version', default='latest')
     PARSER.add_argument(
-        '--docker-build', help='Build docker', action="store_true")
-    PARSER.add_argument(
         '--docker-push', help='Push docker images to GCR', action="store_true")
+    PARSER.add_argument(
+        '--microk8s', help='Build and push docker images to GCR', action="store_true")
     BUILD_ARGS = PARSER.parse_args()
     main(BUILD_ARGS)
