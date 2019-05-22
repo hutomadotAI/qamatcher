@@ -31,17 +31,20 @@ RUN mkdir /ai && chown appuser:appuser /ai
 
 # Copy the code
 COPY embedding/ /src/embedding/
+COPY ai_training/ /src/ai_training
+COPY api_register/ /src/api_register
 
 USER appuser
 WORKDIR /home/appuser
 ENV EMB_SERVER_PORT 9090
 EXPOSE 9090
 CMD ["python3", "/src/embedding/server.py"]
+
 #---------------------------
-FROM common AS test
-RUN pipenv install --dev --system
-COPY --from=release /src/ /src/
-RUN pytest --junitxml=/tmp/tests.xml --timeout=30
+#FROM common AS test
+#RUN pipenv install --dev --system
+#COPY --from=release /src/ /src/
+#RUN pytest --junitxml=/tmp/tests.xml --timeout=30
 #---------------------------
-FROM release
-COPY --from=test /tmp/tests.xml /tmp/tests.xml
+#FROM release
+#COPY --from=test /tmp/tests.xml /tmp/tests.xml

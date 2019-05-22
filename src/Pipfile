@@ -3,36 +3,32 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
 
-[[source]]
-url = "https://pypi.hutoma.ai/simple"
-verify_ssl = false
-name = "hu_pypi"
-
 [packages]
-fluent-logger = {version="*", index="pypi"}
-python-json-logger = {version="*", index="pypi"}
-pyyaml = {version="*", index="pypi"}
-
-dill = {version="*", index="pypi"}
-numpy = {version="*", index="pypi"}
-scipy = {version="*", index="pypi"}
-sklearn = {version="*", index="pypi"}
-matplotlib = {version="*", index="pypi"}
-
+fluent-logger = {version = "*",index = "pypi"}
+python-json-logger = {version = "*",index = "pypi"}
+pyyaml = {version = "*",index = "pypi"}
+dill = {version = "*",index = "pypi"}
+numpy = {version = "*",index = "pypi"}
+scipy = {version = "*",index = "pypi"}
+sklearn = {version = "*",index = "pypi"}
+matplotlib = {version = "*",index = "pypi"}
+async-process-pool = {version = "*",index = "pypi"}
+aiohttp = {version = "*",index = "pypi"}
 # internal libraries
-hu_utils = {version="*", index="hu_pypi"}
-hu_training = {version="*", index="hu_pypi"}
-embedding = {editable = true, path = "."}
+embedding = {editable = true,path = "."}
+ai_training = {editable = true,path = "."}
+api_register = {editable = true, path = "."}
+
 
 [dev-packages]
-colorama = {version="*", index="pypi"}
-pytest = {version="*", index="pypi"}
-pytest-aiohttp = {version="*", index="pypi"}
-pytest-cov = {version="*", index="pypi"}
-pytest-timeout = {version="*", index="pypi"}
-pytest-mock = {version="*", index="pypi"}
-flake8 = {version="*", index="pypi"}
-yapf = {version="*", index="pypi"}
+colorama = {version = "*",index = "pypi"}
+pytest = {version = "*",index = "pypi"}
+pytest-aiohttp = {version = "*",index = "pypi"}
+pytest-cov = {version = "*",index = "pypi"}
+pytest-timeout = {version = "*",index = "pypi"}
+pytest-mock = {version = "*",index = "pypi"}
+flake8 = {version = "*",index = "pypi"}
+yapf = {version = "*",index = "pypi"}
 
 [requires]
 python_version = "3.7"
